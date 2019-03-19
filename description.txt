@@ -1,1 +1,1 @@
-OAuth2 authorization service.
+OAuth2 authorization service in develop.
