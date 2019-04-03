@@ -1,0 +1,10 @@
+spring:
+  profiles: prod
+databases:
+  db_oauth2:
+    driver: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/oauth2
+    username: postgres
+    password: jsadmin7
+config:
+  auth: db_oauth2
