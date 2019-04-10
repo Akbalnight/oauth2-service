@@ -25,16 +25,22 @@ public class ResourceServerConfig
     public void configure(HttpSecurity http)
             throws Exception
     {
-        http.
-                anonymous()
-                .disable()
-                /*.authorizeRequests()
-                .antMatchers("/api/**")
-                .authenticated()*/
-
-                .authorizeRequests().anyRequest().fullyAuthenticated()
+        http
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated()
                 .and()
                 .exceptionHandling()
                 .accessDeniedHandler(new OAuth2AccessDeniedHandler());
+        //http.
+            //    anonymous()
+          //      .disable()
+         //       /*.authorizeRequests()
+         //       .antMatchers("/api/**")
+         //       .authenticated()*/
+          //      .authorizeRequests().anyRequest().fullyAuthenticated()
+         //       .and()
+          //      .exceptionHandling()
+          //      .accessDeniedHandler(new OAuth2AccessDeniedHandler());
     }
 }

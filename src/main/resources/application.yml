@@ -6,5 +6,11 @@ databases:
     url: jdbc:postgresql://localhost:5432/oauth2
     username: postgres
     password: jsadmin7
+  db_users:
+    driver: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/auth
+    username: postgres
+    password: jsadmin7
 config:
   auth: db_oauth2
+  users: db_users

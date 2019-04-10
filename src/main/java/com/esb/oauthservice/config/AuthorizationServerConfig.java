@@ -1,6 +1,7 @@
 package com.esb.oauthservice.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -20,7 +21,9 @@ public class AuthorizationServerConfig
     private static final String SCOPE_READ = "read";
     private static final String SCOPE_WRITE = "write";
     private static final String TRUST = "trust";
-    private static final int VALID_FOREVER = -1;
+
+    @Value("${token.expired.seconds:300}")
+    private int tokenExpiredSeconds;
 
     @Autowired
     private AuthenticationManager authManager;
@@ -40,22 +43,14 @@ public class AuthorizationServerConfig
     public void configure(ClientDetailsServiceConfigurer clients)
             throws Exception
     {
-        /*clients
-                .jdbc(dataSource)
-                .withClient(Const.CLIENT_ID)
-                .secret(Const.CLIENT_SECRET)
-                .authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN)
-                .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
-                .accessTokenValiditySeconds(VALID_FOREVER)
-                .refreshTokenValiditySeconds(VALID_FOREVER);*/
         clients
                 .inMemory()
                 .withClient(Const.CLIENT_ID)
                 .secret(Const.CLIENT_SECRET)
                 .authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN)
                 .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
-                .accessTokenValiditySeconds(VALID_FOREVER)
-                .refreshTokenValiditySeconds(VALID_FOREVER);
+                .accessTokenValiditySeconds(tokenExpiredSeconds)
+                .refreshTokenValiditySeconds(tokenExpiredSeconds);
     }
 
   /*  @Autowired
@@ -64,6 +59,7 @@ public class AuthorizationServerConfig
     @Bean
     public TokenStore tokenStore() {
         return new JdbcTokenStore(dataSource);
+        //см в TokenStoreConfig бин TokenStore
     }*/
 
     @Override

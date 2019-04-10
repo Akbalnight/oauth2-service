@@ -1,5 +1,7 @@
 package com.esb.oauthservice.config;
 
+import com.esb.oauthservice.database.TokenDaoImpl;
+import com.esb.oauthservice.datasource.DataSourceManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,13 +15,25 @@ import javax.sql.DataSource;
 public class TokenStoreConfig
 {
 
+    //@Autowired
+    //private DataSource dataSource;
+
     @Autowired
-    private DataSource dataSource;
+    private DataSourceManager dataSourceManager;
+
+
+    //@Bean
+    public DataSource jdbcAuthDataSource()
+    {
+        return dataSourceManager.getDataSource(TokenDaoImpl.TOKEN_DB);
+    }
+
 
     @Bean
     public TokenStore tokenStore()
     {
-        return new JdbcTokenStore(dataSource);
+        return new JdbcTokenStore(jdbcAuthDataSource());
+        //return new JdbcTokenStore(dataSource);
     }
 
     @Bean
