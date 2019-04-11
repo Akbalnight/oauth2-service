@@ -14,12 +14,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * UsersDaoImpl.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Реализация методов работы с БД пользователей
+ */
 @Component
 public class UsersDaoImpl
 {
-
     private final NamedParameterJdbcTemplate jdbcTemplate;
-
 
     @Autowired
     public UsersDaoImpl(DataSourceManager dataSourceManager)
@@ -27,14 +31,13 @@ public class UsersDaoImpl
         jdbcTemplate = new NamedParameterJdbcTemplate(dataSourceManager.getDataSource("users"));
     }
 
-
     public List<Permission> getUserPermissions(String login)
     {
         try
         {
-            final String SQL_GET_PERMISSIONS_BY_USERNAME = "SELECT DISTINCT p.method, p.path FROM permissions AS p " +
-                    "JOIN role_permissions AS " + "rp ON p.id=rp.id_permission JOIN user_roles AS ur on rp.role=ur" +
-                    ".role WHERE ur.username = :username";
+            final String SQL_GET_PERMISSIONS_BY_USERNAME =
+                    "SELECT DISTINCT p.method, p.path FROM permissions AS p JOIN role_permissions AS rp ON " +
+                            "p.id=rp.id_permission JOIN user_roles AS ur on rp.role=ur.role WHERE ur.username = :username";
             return jdbcTemplate.query(SQL_GET_PERMISSIONS_BY_USERNAME, new MapSqlParameterSource("username", login),
                     (ResultSet rs) ->
             {

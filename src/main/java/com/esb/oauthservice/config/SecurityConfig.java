@@ -18,15 +18,20 @@ import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAu
 
 import javax.sql.DataSource;
 
-
+/**
+ * SecurityConfig.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Настройки конфигурации аутентификации/авторизации пользователей
+ */
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig
         extends WebSecurityConfigurerAdapter
 {
-    private static String SQL_GET_USERS_BY_NAME = "select username,password, enabled from users where username=LOWER" +
-            "(?)";
+    private static String SQL_GET_USERS_BY_NAME =
+            "select username,password, enabled from users where username=LOWER(?)";
     private static String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
 
     @Autowired
@@ -35,7 +40,6 @@ public class SecurityConfig
     @Bean
     public DataSource jdbcDataSource()
     {
-        //return dataSourceManager.getDataSource("auth");
         return dataSourceManager.getDataSource("users");
     }
 
@@ -49,19 +53,7 @@ public class SecurityConfig
 
     @Bean(name = "passwordEncoder")
     public PasswordEncoder passwordEncoder()
-    {/*
-        return new PasswordEncoder()
-        {
-            public String encode(CharSequence charSequence)
-            {
-                return charSequence.toString();
-            }
-
-            public boolean matches(CharSequence charSequence, String s)
-            {
-                return true;
-            }
-        };*/
+    {
         // в БД хранятся пароли в виде хэшей BCrypt
         return new BCryptPasswordEncoder();
     }

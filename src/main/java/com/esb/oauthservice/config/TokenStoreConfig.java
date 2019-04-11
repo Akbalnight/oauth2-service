@@ -11,29 +11,28 @@ import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
 
 import javax.sql.DataSource;
 
+/**
+ * TokenStoreConfig.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Настройки хранения токенов
+ */
 @Configuration
 public class TokenStoreConfig
 {
-
-    //@Autowired
-    //private DataSource dataSource;
-
     @Autowired
     private DataSourceManager dataSourceManager;
 
 
-    //@Bean
     public DataSource jdbcAuthDataSource()
     {
         return dataSourceManager.getDataSource(TokenDaoImpl.TOKEN_DB);
     }
 
-
     @Bean
     public TokenStore tokenStore()
     {
         return new JdbcTokenStore(jdbcAuthDataSource());
-        //return new JdbcTokenStore(dataSource);
     }
 
     @Bean

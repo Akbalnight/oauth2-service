@@ -1,5 +1,11 @@
 package com.esb.oauthservice.config;
 
+/**
+ * Const.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Константы с данными сервисов
+ */
 public class Const
 {
     public static final String CLIENT_ID = "ASKUTE-service";

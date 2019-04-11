@@ -13,6 +13,12 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * TokenDaoImpl.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Реализация методов работы с БД токенов
+ */
 @Component
 public class TokenDaoImpl
 {
@@ -31,6 +37,9 @@ public class TokenDaoImpl
         jdbcTemplate = new JdbcTemplate(dataSourceManager.getDataSource(TOKEN_DB));
     }
 
+    /**
+     * Инициализация таблиц БД
+     */
     @PostConstruct
     private void init()
     {

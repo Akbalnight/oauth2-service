@@ -5,6 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+
+/**
+ * OAuthServiceApplication.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ */
 @SpringBootApplication(scanBasePackages = "com.esb.oauthservice", exclude = {SecurityAutoConfiguration.class})
 @EnableScheduling
 public class OAuthServiceApplication

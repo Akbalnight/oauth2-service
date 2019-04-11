@@ -10,6 +10,12 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 
+/**
+ * AuthorizationServerConfig.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Настройка конфигурации сервера авторизации токенов
+ */
 @Configuration
 @EnableAuthorizationServer
 public class AuthorizationServerConfig
@@ -22,6 +28,9 @@ public class AuthorizationServerConfig
     private static final String SCOPE_WRITE = "write";
     private static final String TRUST = "trust";
 
+    /**
+     * Продолжительность жизни токена в секундах
+     */
     @Value("${token.expired.seconds:300}")
     private int tokenExpiredSeconds;
 
@@ -30,14 +39,6 @@ public class AuthorizationServerConfig
 
     @Autowired
     private TokenStore tokenStore;
-/* проверить
-    @Autowired
-    DataSource dataSource;
-    @Bean
-    public TokenStore tokenStore()
-    {
-        return new ESBTokenStore(dataSource);
-    }*/
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients)
@@ -52,15 +53,6 @@ public class AuthorizationServerConfig
                 .accessTokenValiditySeconds(tokenExpiredSeconds)
                 .refreshTokenValiditySeconds(tokenExpiredSeconds);
     }
-
-  /*  @Autowired
-    private DataSource dataSource;
-
-    @Bean
-    public TokenStore tokenStore() {
-        return new JdbcTokenStore(dataSource);
-        //см в TokenStoreConfig бин TokenStore
-    }*/
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints)

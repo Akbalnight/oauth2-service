@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+/**
+ * GlobalExceptionsHadler.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Обработчик исключений при выполнении запросов
+ */
 @ControllerAdvice
 @Component
 public class GlobalExceptionsHadler

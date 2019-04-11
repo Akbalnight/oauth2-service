@@ -11,6 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * UsersStorage.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Хранилище аутентифицированных пользователей и их данных
+ */
 @Component
 public class UsersStorage
 {
@@ -20,6 +26,15 @@ public class UsersStorage
     private Map<String, UserData> users = new HashMap<>();
     private AntPathMatcher matcher = new AntPathMatcher();
 
+
+    /**
+     * Возвращает id и список ролей пользователя в случае успешного доступа к запросу, иначе null
+     * @param login Логин пользователя
+     * @param method Http метод запроса
+     * @param path Путь запроса
+     * @return Возвращает id и список ролей пользователя в случае успешного доступа к запросу, иначе null
+     * @throws ServiceException
+     */
     public UserResponseObject checkAccess(String login, HttpMethod method, String path)
             throws ServiceException
     {
@@ -38,6 +53,9 @@ public class UsersStorage
         }
     }
 
+    /**
+     * Проверка наличия доступа указанного запроса в списке пермиссий
+     */
     private boolean checkAccess(List<Permission> permissions, HttpMethod method, String path)
     {
         return permissions
@@ -69,6 +87,10 @@ public class UsersStorage
                 .build());
     }
 
+    /**
+     * Удаление пользователея из хранилища
+     * @param name Логин пользователя
+     */
     public void removeUser(String name)
     {
         users.remove(name);

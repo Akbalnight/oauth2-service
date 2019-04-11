@@ -2,6 +2,7 @@ package com.esb.oauthservice.controllers;
 
 import com.esb.oauthservice.config.Const;
 import com.esb.oauthservice.exceptions.ServiceException;
+import com.esb.oauthservice.model.ExceptionResponseObject;
 import com.esb.oauthservice.model.QueryData;
 import com.esb.oauthservice.storage.UserResponseObject;
 import com.esb.oauthservice.storage.UsersStorage;
@@ -22,35 +23,42 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * AuthController.java
+ * Date: 10 апр. 2019 г.
+ * Users: amatveev
+ * Description: Основной контроллер сервиса
+ */
 @RestController
 public class AuthController
 {
     @Autowired
     private UsersStorage usersStorage;
-
     @Autowired
     private DefaultTokenServices tokenServices;
 
-    @GetMapping(value = "/auth")
-    //@Secured({"ROLE_USER", "ROLE_ADMIN"})
-    public String auth(Principal principal/*, OAuth2AuthorizedClient authorizedClient*/)
-    {
-        if (principal != null)
-        {
-            return principal.getName() + " " + principal.toString();
-        }
-        return "false";
-    }
+    @Resource(name = "tokenStore")
+    private TokenStore tokenStore;
 
+    /**
+     * Проверка доступа пользователя к запросу
+     * @param principal Данные пользователя
+     * @param queryData Данные запроса
+     * @return Возвращает id и список ролей пользователя в случае успешного доступа к запросу, иначе статус 403
+     * @throws ServiceException
+     */
     @PostMapping(value = "/checkAccess")
     public ResponseEntity<?> checkAccess(Principal principal, @RequestBody QueryData queryData)
             throws ServiceException
     {
         if (queryData == null || queryData.getMethod() == null || queryData.getMethod() == null)
         {
-            return new ResponseEntity("{\"error\": \""+HttpStatus.BAD_REQUEST.getReasonPhrase()+"\",\"error_description\":\"Не " +
-                    "указаны параметры " +
-                    "запроса!\"}", HttpStatus.BAD_REQUEST);
+
+            return new ResponseEntity(ExceptionResponseObject
+                    .builder()
+                    .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                    .error_description("Не указаны параметры запроса!")
+                    .build(), HttpStatus.BAD_REQUEST);
         }
 
         UserResponseObject result = usersStorage.checkAccess(principal.getName(), queryData.getMethod(),
@@ -63,11 +71,6 @@ public class AuthController
         {
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         }
-
-       /* {
-            "error": "invalid_token",
-                "error_description": "Invalid access token: caa0ff6b-29d1-45e1-a416-2785554647b5g"
-        }*/
     }
 
     @GetMapping("/revokeToken")//TODO заменить на /logout
@@ -80,16 +83,14 @@ public class AuthController
         usersStorage.removeUser(authentication.getName());
     }
 
-    @Resource(name = "tokenStore")
-    TokenStore tokenStore;
     @GetMapping(value = "/activeUsers")
     @ResponseBody
     /**
      * Возвращает список всех пользователей
-     */
-    public List<String> getActiveUsers(Principal principal)
+     */ public List<String> getActiveUsers(Principal principal)
             throws ServiceException
     {
+        //TODO Отладить
         List<String> tokenValues = new ArrayList<>();
         if (usersStorage.checkAccess(principal.getName(), HttpMethod.GET, "/activeUsers") != null)
         {
