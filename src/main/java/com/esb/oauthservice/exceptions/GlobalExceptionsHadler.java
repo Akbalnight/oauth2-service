@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class GlobalExceptionsHadler
 {
     @ExceptionHandler
-    public ResponseEntity handleServiceException(ServiceException ex)
+    public ResponseEntity<?> handleServiceException(ServiceException ex)
     {
-        return new ResponseEntity(HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 }

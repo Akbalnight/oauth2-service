@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
  * Users: amatveev
  * Description: Класс для обертки и генерации исключений сервиса при выполнении запросов
  */
+@SuppressWarnings("serial")
 @Component
 public class ServiceException extends Exception
 {
