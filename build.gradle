@@ -4,6 +4,7 @@ buildscript {
 
         appVersion = "0.1."
         buildNumber = (System.getenv("BUILD_NUMBER")?.toString()?.toInteger() ?: 1)
+      	appName = 'oauth2_service.jar'
     }
     repositories {
         maven { url "https://plugins.gradle.org/m2/" }
@@ -35,11 +36,12 @@ jar {
     version =  '0.1.0'
 }
 
+bootJar { archiveName = appName }
+
 task bootJarCustom (type: Copy, dependsOn:bootJar){
-    from "build/libs"
+	from "build/libs"
     into "./build"
-    include (project.name + "-" + project.version + ".jar")
-    rename (project.name + "-" + project.version + ".jar", project.name + ".jar")
+    include (appName)
 }
 configure(bootJarCustom) {
     group = BasePlugin.BUILD_GROUP
