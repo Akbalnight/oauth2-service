@@ -1,0 +1,67 @@
+buildscript {
+    ext {
+        springBootVersion = '2.0.5.RELEASE'
+
+        appVersion = "0.1."
+        buildNumber = (System.getenv("BUILD_NUMBER")?.toString()?.toInteger() ?: 1)
+    }
+    repositories {
+        maven { url "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.5-rc1"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: "org.sonarqube"
+apply plugin: 'jacoco'
+
+
+group = 'com.esb'
+version appVersion + buildNumber
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+jar {
+    baseName = 'gs-authenticating-ldap'
+    version =  '0.1.0'
+}
+
+task bootJarCustom (type: Copy, dependsOn:bootJar){
+    from "build/libs"
+    into "./build"
+    include (project.name + "-" + project.version + ".jar")
+    rename (project.name + "-" + project.version + ".jar", project.name + ".jar")
+}
+configure(bootJarCustom) {
+    group = BasePlugin.BUILD_GROUP
+    description = 'Assembles bootJar task and copy jar to build directory of root project'
+}
+
+dependencies {
+    springBoot { buildInfo() }
+    implementation('org.springframework.boot:spring-boot-starter-data-jpa')
+    implementation('org.springframework.boot:spring-boot-starter-security')
+    implementation('org.springframework.security.oauth:spring-security-oauth2:2.3.3.RELEASE')
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    runtimeOnly('org.springframework.boot:spring-boot-devtools')
+    runtimeOnly('com.h2database:h2')
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    testImplementation('org.springframework.security:spring-security-test')
+
+
+    compile("org.apache.directory.server:apacheds-server-jndi:1.5.5")
+    compile('org.springframework:spring-context-support')
+    runtime('org.postgresql:postgresql')
+    implementation("org.projectlombok:lombok:1.18.4")
+    compile("org.springframework.security:spring-security-ldap:3.2.4.RELEASE")    
+    implementation('org.springframework.boot:spring-boot-starter-data-mongodb')    
+}
