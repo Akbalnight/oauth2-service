@@ -61,8 +61,7 @@ dependencies {
     compile("org.apache.directory.server:apacheds-server-jndi:1.5.5")
     compile('org.springframework:spring-context-support')
     runtime('org.postgresql:postgresql')
-
     implementation("org.projectlombok:lombok:1.18.4")
-
-    compile("org.springframework.security:spring-security-ldap:3.2.4.RELEASE")
+    compile("org.springframework.security:spring-security-ldap:3.2.4.RELEASE")    
+    implementation('org.springframework.boot:spring-boot-starter-data-mongodb')    
 }

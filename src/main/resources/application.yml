@@ -1,16 +1,15 @@
 spring:
   profiles: prod
 databases:
-  db_oauth2:
-    driver: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/oauth2
-    username: postgres
-    password: jsadmin7
   db_users:
     driver: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/auth
     username: postgres
     password: jsadmin7
+  db_oauth2_mongo:
+    url: 127.0.0.1:27017
+    username: admin
+    password: adminpassword
 config:
-  auth: db_oauth2
   users: db_users
+  mongo_oauth2: db_oauth2_mongo
