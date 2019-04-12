@@ -54,7 +54,7 @@ public class AuthController
         if (queryData == null || queryData.getMethod() == null || queryData.getMethod() == null)
         {
 
-            return new ResponseEntity(ExceptionResponseObject
+            return new ResponseEntity<>(ExceptionResponseObject
                     .builder()
                     .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                     .error_description("Не указаны параметры запроса!")
@@ -65,11 +65,11 @@ public class AuthController
                 queryData.getPath());
         if (result != null)
         {
-            return new ResponseEntity(result, HttpStatus.OK);
+            return new ResponseEntity<>(result, HttpStatus.OK);
         }
         else
         {
-            return new ResponseEntity(HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 

@@ -1,12 +1,11 @@
 package com.esb.oauthservice.config;
 
-import com.esb.oauthservice.datasource.DataSourceManager;
-import com.esb.oauthservice.mongo.MongoTokenStore;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+
+import com.esb.oauthservice.mongo.MongoTokenStore;
 
 /**
  * TokenStoreConfig.java
@@ -17,10 +16,6 @@ import org.springframework.security.oauth2.provider.token.TokenStore;
 @Configuration
 public class TokenStoreConfig
 {
-    @Autowired
-    private DataSourceManager dataSourceManager;
-
-
     @Bean
     public TokenStore tokenStore()
     {
