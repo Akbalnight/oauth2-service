@@ -26,10 +26,17 @@ public class MongoConfig
     public MongoDbFactory mongoDbFactory()
     {
         DatabaseSettings dbSettings = config.getDatabaseSettings(DB_NAME);
-        MongoClient mongoClient = new MongoClient(singletonList(new ServerAddress(dbSettings.getUrl())),
-                singletonList(MongoCredential.createCredential(dbSettings.getUsername(), DB_NAME, dbSettings
-                .getPassword()
-                .toCharArray())));
+        MongoClient mongoClient;
+        if (dbSettings.getUsername() == null || dbSettings.getUsername().isEmpty())
+        {
+            mongoClient = new MongoClient(new ServerAddress(dbSettings.getUrl()));
+        }
+        else
+        {
+            mongoClient = new MongoClient(singletonList(new ServerAddress(dbSettings.getUrl())),
+                    singletonList(MongoCredential.createCredential(dbSettings.getUsername(), DB_NAME,
+                            dbSettings.getPassword().toCharArray())));
+        }
         return new SimpleMongoDbFactory(mongoClient, DB_NAME);
     }
 
