@@ -1,7 +1,8 @@
 package com.esb.oauthservice.config;
 
 import com.esb.oauthservice.datasource.DataSourceManager;
-import com.esb.oauthservice.ldap.ESBActiveDirectoryLdapAuthenticationProvider;
+import com.esb.oauthservice.ldap.EsbLdapUserDetailsContextMapper;
+import com.esb.oauthservice.ldap.LdapAuthoritiesMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,9 +13,11 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
+import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
 import javax.sql.DataSource;
 
@@ -68,12 +71,11 @@ public class SecurityConfig
     public void configAuthentication(AuthenticationManagerBuilder auth)
             throws Exception
     {
-        auth
-                .jdbcAuthentication()
-                .dataSource(jdbcDataSource())
-                .passwordEncoder(passwordEncoder())
-                .usersByUsernameQuery(SQL_GET_USERS_BY_NAME)
-                .authoritiesByUsernameQuery(SQL_AUTORITIES_BY_NAME);
+        auth.jdbcAuthentication()
+            .dataSource(jdbcDataSource())
+            .passwordEncoder(passwordEncoder())
+            .usersByUsernameQuery(SQL_GET_USERS_BY_NAME)
+            .authoritiesByUsernameQuery(SQL_AUTORITIES_BY_NAME);
         if (!ldapUrl.isEmpty() && !ldapDomen.isEmpty())
         {
             auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
@@ -91,7 +93,26 @@ public class SecurityConfig
                 ldapUrl);
         provider.setConvertSubErrorCodesToExceptions(true);
         provider.setUseAuthenticationRequestCredentials(true);
-        return new ESBActiveDirectoryLdapAuthenticationProvider(provider);
+        provider.setAuthoritiesMapper(ldapAuthoritiesMapper());
+        provider.setUserDetailsContextMapper(userDetailsContextMapper());
+        return provider;
     }
 
+    /**
+     * Сопоставляет LDAP группы пользователя с ролями из БД
+     */
+    @Bean
+    public GrantedAuthoritiesMapper ldapAuthoritiesMapper()
+    {
+        return new LdapAuthoritiesMapper();
+    }
+
+    /**
+     * Получение информации о пользователе из LDAP
+     */
+    @Bean
+    public UserDetailsContextMapper userDetailsContextMapper()
+    {
+        return new EsbLdapUserDetailsContextMapper();
+    }
 }

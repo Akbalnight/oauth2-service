@@ -3,15 +3,19 @@ package com.esb.oauthservice.database;
 import com.esb.oauthservice.datasource.DataSourceManager;
 import com.esb.oauthservice.storage.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -21,7 +25,7 @@ import java.util.List;
  * Description: Реализация методов работы с БД пользователей
  */
 @Component
-public class UsersDaoImpl
+public class UsersDaoImpl implements UsersDao
 {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -41,7 +45,6 @@ public class UsersDaoImpl
             return jdbcTemplate.query(SQL_GET_PERMISSIONS_BY_USERNAME, new MapSqlParameterSource("username", login),
                     (ResultSet rs) ->
             {
-
                 List<Permission> permissions = new ArrayList<>();
                 while (rs.next())
                 {
@@ -59,7 +62,7 @@ public class UsersDaoImpl
         }
     }
 
-    public int getUserId(String login)
+    public Integer getUserId(String login)
     {//TODO добавить приведение логина в нижн регистр?
         try
         {
@@ -78,5 +81,23 @@ public class UsersDaoImpl
         final String SQL_GET_USER_ROLES = "SELECT role FROM user_roles WHERE username = :username";
         return jdbcTemplate.queryForList(SQL_GET_USER_ROLES, new MapSqlParameterSource("username", login),
                 String.class);
+    }
+
+    public HashMap<String, String> getLdapAuthoritiesMap()
+    {
+        final String SQL_GET_LDAP_ROLES = "SELECT ldap_group, role FROM ldap_roles";
+        return jdbcTemplate.query(SQL_GET_LDAP_ROLES, new ResultSetExtractor<HashMap<String, String>>()
+        {
+            @Override
+            public HashMap<String, String> extractData(ResultSet rs) throws SQLException, DataAccessException
+            {
+                HashMap<String, String> mapRet = new HashMap<String, String>();
+                while (rs.next())
+                {
+                    mapRet.put(rs.getString("ldap_group"), rs.getString("role"));
+                }
+                return mapRet;
+            }
+        });
     }
 }

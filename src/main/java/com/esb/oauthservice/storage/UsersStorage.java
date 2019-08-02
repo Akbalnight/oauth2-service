@@ -1,6 +1,6 @@
 package com.esb.oauthservice.storage;
 
-import com.esb.oauthservice.database.UsersDaoImpl;
+import com.esb.oauthservice.database.UsersDao;
 import com.esb.oauthservice.exceptions.ServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
@@ -21,7 +21,7 @@ import java.util.Map;
 public class UsersStorage
 {
     @Autowired
-    private UsersDaoImpl usersDao;
+    private UsersDao usersDao;
 
     private Map<String, UserData> users = new HashMap<>();
     private AntPathMatcher matcher = new AntPathMatcher();
