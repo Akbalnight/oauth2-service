@@ -11,6 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * @author amatveev
+ * Description: Добавление в токен информации о пользователе
+ */
 public class EsbTokenEnhancer
         implements TokenEnhancer
 {
@@ -22,13 +26,14 @@ public class EsbTokenEnhancer
         {
             UserDetails principal = (UserDetails) authentication.getPrincipal();
             additionalInfo.put("username", principal.getUsername());
-            additionalInfo.put("roles", principal.getAuthorities()
-                                                 .stream()
-                                                 .map(GrantedAuthority::getAuthority)
-                                                 .collect(Collectors.joining(", ", "[", "]")));
+            additionalInfo.put("roles", authentication.getAuthorities()
+                                                      .stream()
+                                                      .map(GrantedAuthority::getAuthority)
+                                                      .collect(Collectors.joining(", ", "[", "]")));
 
             if (authentication.getPrincipal() instanceof EsbLdapUserDetails)
             {
+                // Для LDAP пользователей сохраняются данные из LDAP
                 Map<String, String> userInfo = ((EsbLdapUserDetails) authentication.getPrincipal()).getUserInfo();
                 userInfo.entrySet()
                         .stream()
