@@ -40,6 +40,12 @@ public class AuthorizationServerConfig
     @Value("${token.expired.seconds:300}")
     private int tokenExpiredSeconds;
 
+    /**
+     * Продолжительность жизни refresh токена в секундах
+     */
+    @Value("${refreshtoken.expired.seconds:3600}")
+    private int refreshTokenExpiredSeconds;
+
     @Autowired
     private AuthenticationManager authManager;
 
@@ -56,7 +62,7 @@ public class AuthorizationServerConfig
                .authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN)
                .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
                .accessTokenValiditySeconds(tokenExpiredSeconds)
-               .refreshTokenValiditySeconds(tokenExpiredSeconds);
+               .refreshTokenValiditySeconds(refreshTokenExpiredSeconds);
     }
 
     @Override
