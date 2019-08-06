@@ -2,6 +2,7 @@ package com.esb.oauthservice.controllers;
 
 import com.esb.oauthservice.config.Const;
 import com.esb.oauthservice.exceptions.ServiceException;
+import com.esb.oauthservice.logger.Logger;
 import com.esb.oauthservice.model.ExceptionResponseObject;
 import com.esb.oauthservice.model.QueryData;
 import com.esb.oauthservice.storage.UserResponseObject;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
@@ -33,6 +35,8 @@ import java.util.List;
 public class AuthController
 {
     @Autowired
+    private Logger logger;
+    @Autowired
     private UsersStorage usersStorage;
     @Autowired
     private DefaultTokenServices tokenServices;
@@ -53,27 +57,24 @@ public class AuthController
     {
         if (queryData == null || queryData.getMethod() == null || queryData.getMethod() == null)
         {
-
-            return new ResponseEntity<>(ExceptionResponseObject
-                    .builder()
-                    .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                    .error_description("Не указаны параметры запроса!")
-                    .build(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(ExceptionResponseObject.builder()
+                                                               .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                                                               .error_description("Не указаны параметры запроса!")
+                                                               .build(), HttpStatus.BAD_REQUEST);
         }
-
-        UserResponseObject result = usersStorage.checkAccess(principal.getName(), queryData.getMethod(),
-                queryData.getPath());
-        if (result != null)
+        if (principal instanceof OAuth2Authentication)
         {
-            return new ResponseEntity<>(result, HttpStatus.OK);
+            UserResponseObject result = usersStorage.checkAccess((OAuth2Authentication) principal,
+                    queryData.getMethod(), queryData.getPath());
+            if (result != null)
+            {
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            }
         }
-        else
-        {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
 
-    @GetMapping("/revokeToken")//TODO заменить на /logout
+    @GetMapping("/revokeToken")
     @ResponseStatus(code = HttpStatus.OK)
     private void logout(Authentication authentication)
     {
@@ -92,7 +93,7 @@ public class AuthController
     {
         //TODO Отладить
         List<String> tokenValues = new ArrayList<>();
-        if (usersStorage.checkAccess(principal.getName(), HttpMethod.GET, "/activeUsers") != null)
+        if (usersStorage.checkAccess((OAuth2Authentication)principal, HttpMethod.GET, "/activeUsers") != null)
         {
             Collection<OAuth2AccessToken> tokens = tokenStore.findTokensByClientId(Const.CLIENT_ID);
             if (tokens != null)
