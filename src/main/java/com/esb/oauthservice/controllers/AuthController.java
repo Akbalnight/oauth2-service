@@ -55,7 +55,7 @@ public class AuthController
     public ResponseEntity<?> checkAccess(Principal principal, @RequestBody QueryData queryData)
             throws ServiceException
     {
-        if (queryData == null || queryData.getMethod() == null || queryData.getMethod() == null)
+        if (queryData == null || queryData.getMethod() == null)
         {
             return new ResponseEntity<>(ExceptionResponseObject.builder()
                                                                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
