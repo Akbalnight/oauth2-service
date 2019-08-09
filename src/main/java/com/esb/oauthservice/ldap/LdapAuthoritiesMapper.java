@@ -48,8 +48,6 @@ public class LdapAuthoritiesMapper
                         }
                     });
         });
-        //DEL
-        mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         return mappedAuthorities;
     }
 }

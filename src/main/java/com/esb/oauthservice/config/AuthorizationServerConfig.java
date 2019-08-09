@@ -28,7 +28,6 @@ public class AuthorizationServerConfig
         extends AuthorizationServerConfigurerAdapter
 {
     private static final String GRANT_TYPE_PASSWORD = "password";
-    private static final String AUTHORIZATION_CODE = "authorization_code";
     private static final String REFRESH_TOKEN = "refresh_token";
     private static final String SCOPE_READ = "read";
     private static final String SCOPE_WRITE = "write";
@@ -47,7 +46,7 @@ public class AuthorizationServerConfig
     private int refreshTokenExpiredSeconds;
 
     @Autowired
-    private AuthenticationManager authManager;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private TokenStore tokenStore;
@@ -59,7 +58,7 @@ public class AuthorizationServerConfig
         clients.inMemory()
                .withClient(Const.CLIENT_ID)
                .secret(Const.CLIENT_SECRET)
-               .authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN)
+               .authorizedGrantTypes(GRANT_TYPE_PASSWORD, REFRESH_TOKEN)
                .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
                .accessTokenValiditySeconds(tokenExpiredSeconds)
                .refreshTokenValiditySeconds(refreshTokenExpiredSeconds);
@@ -68,9 +67,12 @@ public class AuthorizationServerConfig
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints)
     {
+        DefaultTokenServices tokenServices = tokenServices();
+        tokenServices.setClientDetailsService(endpoints.getClientDetailsService());
         endpoints.tokenStore(tokenStore)
+                 .tokenServices(tokenServices)
                  .tokenEnhancer(tokenEnhancer())
-                 .authenticationManager(authManager);
+                 .authenticationManager(authenticationManager);
     }
 
     @Bean
