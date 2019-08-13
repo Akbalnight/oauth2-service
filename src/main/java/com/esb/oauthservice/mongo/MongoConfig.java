@@ -8,9 +8,15 @@ import com.mongodb.ServerAddress;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Collections.singletonList;
 
@@ -40,9 +46,24 @@ public class MongoConfig
         return new SimpleMongoDbFactory(mongoClient, DB_NAME);
     }
 
+    /**
+     * Парсинг объектов при чтении из базы
+     */
+    @Bean
+    public MongoCustomConversions customConversions()
+    {
+        List<Converter<?, ?>> converters = new ArrayList<>();
+        converters.add(new UsernamePasswordAuthenticationTokenConverter());
+        return new MongoCustomConversions(converters);
+    }
+
     @Bean
     public MongoTemplate mongoTemplate()
     {
-        return new MongoTemplate(mongoDbFactory());
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory());
+        MappingMongoConverter mongoMapping = (MappingMongoConverter) mongoTemplate.getConverter();
+        mongoMapping.setCustomConversions(customConversions());
+        mongoMapping.afterPropertiesSet();
+        return mongoTemplate;
     }
 }
