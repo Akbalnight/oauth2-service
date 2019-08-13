@@ -8,7 +8,6 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 @Document(collection = "access_token")
 public class MongoAccessToken
 {
-
     public static final String TOKEN_ID = "tokenId";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String AUTHENTICATION_ID = "authenticationId";
@@ -23,7 +22,7 @@ public class MongoAccessToken
     private String authenticationId;
     private String username;
     private String clientId;
-    private String authentication;
+    private OAuth2Authentication authentication;
     private String refreshToken;
 
     public String getId()
@@ -88,12 +87,12 @@ public class MongoAccessToken
 
     public OAuth2Authentication getAuthentication()
     {
-        return SerializableObjectConverter.deserialize(authentication);
+        return authentication;
     }
 
     public void setAuthentication(OAuth2Authentication authentication)
     {
-        this.authentication = SerializableObjectConverter.serialize(authentication);
+        this.authentication = authentication;
     }
 
     public String getRefreshToken()
