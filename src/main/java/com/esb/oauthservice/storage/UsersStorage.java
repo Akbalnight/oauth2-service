@@ -1,14 +1,13 @@
 package com.esb.oauthservice.storage;
 
 import com.esb.oauthservice.database.UsersDao;
-import com.esb.oauthservice.exceptions.ServiceException;
+import com.esb.oauthservice.ldap.EsbLdapUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.ldap.userdetails.LdapUserDetails;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,82 +23,59 @@ import java.util.stream.Collectors;
 @Component
 public class UsersStorage
 {
-    // Идентификатор для LDAP пользователей
-    public static final int LDAP_USER = -1;
     @Autowired
     private UsersDao usersDao;
 
     // Список всех аутентифицированных пользователей с их пермиссиями
-    private Map<String, UserData> users = new HashMap<>();
-    private AntPathMatcher matcher = new AntPathMatcher();
+    private Map<String, UserData> usersDb = new HashMap<>();
+    private Map<String, UserData> usersLdap = new HashMap<>();
 
-    /**
-     * Возвращает id и список ролей пользователя в случае успешного доступа к запросу, иначе null
-     * @param method Http метод запроса
-     * @param path Путь запроса
-     * @return Возвращает id и список ролей пользователя в случае успешного доступа к запросу, иначе null
-     * @throws ServiceException
-     */
-    public UserResponseObject checkAccess(OAuth2Authentication auth, HttpMethod method, String path)
-            throws ServiceException
+    public UserData getUser(OAuth2Authentication authentication)
     {
-        String login = auth.getName();
-        if (login == null||login.isEmpty())
+        String login = authentication.getName();
+        if (isLdapUser(authentication))
         {
-            //TODO Ошибка аутентификации. Имя пользователя не указано.
-            throw new ServiceException();
-        }
-        if (!users.containsKey(login))
-        {
-            if (auth.getPrincipal() instanceof LdapUserDetails)
+            if (!usersLdap.containsKey(login))
             {
-                // Для LDAP пользователей пермиссии проверяются только для ролей, полученных из LDAP групп
-                List<String> roles = auth.getAuthorities()
-                                         .stream()
-                                         .map(GrantedAuthority::getAuthority)
-                                         .collect(Collectors.toList());
-                fillUserPermissionsByRoles(login, roles);
+                throw new UsernameNotFoundException(login);
             }
-            else
+            return usersLdap.get(login);
+
+        }
+        if (isDatabaseUser(authentication))
+        {
+            if (!usersDb.containsKey(login))
             {
-                fillUserPermissionsByLogin(login);
+                throw new UsernameNotFoundException(login);
             }
+            return usersDb.get(login);
         }
-        UserData userData = users.get(login);
-        if (checkAccess(userData.getPermissions(), method, path))
-        {
-            return userData.getUserResponseObject();
-        }
-        else
-        {
-            return null;
-        }
+        throw new UsernameNotFoundException(login);
     }
 
-    /**
-     * Проверка наличия доступа указанного запроса в списке пермиссий
-     */
-    private boolean checkAccess(List<Permission> permissions, HttpMethod method, String path)
+    private boolean isDatabaseUser(OAuth2Authentication authentication)
     {
-        return permissions.stream()
-                          .filter(permission -> permission.getMethod() == method && matcher.match(permission.getPath(), path))
-                          .findAny()
-                          .isPresent();
+        return authentication.getPrincipal() instanceof User;
+    }
+
+    private boolean isLdapUser(OAuth2Authentication authentication)
+    {
+        return authentication.getPrincipal() instanceof EsbLdapUserDetails;
     }
 
     /**
      * Заполняет пермиссии пользователя из БД
      * @param login Логин пользователя
      */
-    private void fillUserPermissionsByLogin(String login)
+    private void fillDbUserPermissionsByLogin(String login)
     {
-        users.put(login, UserData.builder()
-                                 .permissions(usersDao.getUserPermissions(login))
-                                 .userResponseObject(UserResponseObject.builder()
-                                                                       .id(usersDao.getUserId(login))
-                                                                       .roles(usersDao.getUserRoles(login))
-                                                                       .build())
-                                 .build());
+        usersDb.put(login, UserData.builder()
+                                   .permissions(usersDao.getUserPermissions(login))
+                                   .userResponseObject(UserResponseObject.builder()
+                                                                         .id(usersDao.getUserId(login))
+                                                                         .roles(usersDao.getUserRoles(login))
+                                                                         .build())
+                                   .build());
     }
 
     /**
@@ -107,15 +83,14 @@ public class UsersStorage
      * @param login Логин пользователя
      * @param roles Список ролей
      */
-    private void fillUserPermissionsByRoles(String login, List<String> roles)
+    private void fillLdapUserPermissionsByRoles(String login, List<String> roles)
     {
-        users.put(login, UserData.builder()
-                                 .permissions(usersDao.getPermissionsFromRoles(roles))
-                                 .userResponseObject(UserResponseObject.builder()
-                                                                       .id(LDAP_USER)
-                                                                       .roles(roles)
-                                                                       .build())
-                                 .build());
+        usersLdap.put(login, UserData.builder()
+                                     .permissions(usersDao.getPermissionsFromRoles(roles))
+                                     .userResponseObject(UserResponseObject.builder()
+                                                                           .roles(roles)
+                                                                           .build())
+                                     .build());
     }
 
     /**
@@ -124,6 +99,28 @@ public class UsersStorage
      */
     public void removeUser(String name)
     {
-        users.remove(name);
+        usersDb.remove(name);
+    }
+
+    public List<Permission> getUserPermissions(OAuth2Authentication authentication)
+    {
+        return getUser(authentication).getPermissions();
+    }
+
+    public void checkOrFillUserPermissions(OAuth2Authentication authentication)
+    {
+        String username = authentication.getName();
+        if (isLdapUser(authentication) && !usersLdap.containsKey(username))
+        { // Для LDAP пользователей пермиссии проверяются только для ролей, полученных из LDAP групп
+            List<String> roles = authentication.getAuthorities()
+                                               .stream()
+                                               .map(GrantedAuthority::getAuthority)
+                                               .collect(Collectors.toList());
+            fillLdapUserPermissionsByRoles(username, roles);
+        }
+        if (isDatabaseUser(authentication) && !usersDb.containsKey(username))
+        {
+            fillDbUserPermissionsByLogin(username);
+        }
     }
 }

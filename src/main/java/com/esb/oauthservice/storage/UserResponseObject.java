@@ -1,5 +1,6 @@
 package com.esb.oauthservice.storage;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,5 +25,6 @@ public class UserResponseObject
     /**
      * Id пользователя
      */
-    private int id;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer id;
 }
