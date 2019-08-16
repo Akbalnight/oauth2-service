@@ -1,7 +1,8 @@
-package com.esb.oauthservice.mongo;
+package com.esb.oauthservice.config;
 
 import com.esb.oauthservice.datasource.DatabaseSettings;
 import com.esb.oauthservice.datasource.DatabasesConfig;
+import com.esb.oauthservice.mongo.UsernamePasswordAuthenticationTokenConverter;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;

@@ -6,8 +6,8 @@ package com.esb.oauthservice.config;
  * Users: amatveev
  * Description: Константы с данными сервисов
  */
-public class Const
+public class ClientData
 {
     public static final String CLIENT_ID = "ASKUTE-service";
-    public static final String CLIENT_SECRET = "$2a$10$gQxHepiCTQ2OkFG2yldYdOFpXlCPBKKPOMv5HB9O0evnjB0iW8EjO";// ASKUTE-password в Bcrypt
+    public static final String CLIENT_SECRET = "$2a$10$gQxHepiCTQ2OkFG2yldYdOFpXlCPBKKPOMv5HB9O0evnjB0iW8EjO"; // ASKUTE-password в Bcrypt
 }

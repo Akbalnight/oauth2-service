@@ -7,13 +7,17 @@ import org.springframework.security.ldap.userdetails.LdapUserDetails;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Description: Обертка {@code LdapUserDetails} с дополнительными данными пользователя из LDAP
+ * @author AsMatveev
+ */
 public class EsbLdapUserDetails
         implements LdapUserDetails
 {
     private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
     private LdapUserDetails details;
     /**
-     * Данные пользователя из LDAP
+     * Данные пользователя из LDAP. Формируются с помощью {@code LdapAttributesConst}
      */
     private Map<String, String> userInfo;
 

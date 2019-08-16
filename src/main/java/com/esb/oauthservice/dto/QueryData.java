@@ -1,5 +1,6 @@
-package com.esb.oauthservice.model;
+package com.esb.oauthservice.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpMethod;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpMethod;
  */
 @Getter
 @Setter
+@Builder
 public class QueryData
 {
     /**

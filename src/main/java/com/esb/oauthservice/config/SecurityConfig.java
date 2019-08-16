@@ -33,9 +33,9 @@ import javax.sql.DataSource;
 public class SecurityConfig
         extends WebSecurityConfigurerAdapter
 {
-    private static String SQL_GET_USERS_BY_NAME =
+    private static final String SQL_GET_USERS_BY_NAME =
             "select username,password, enabled from users where username=LOWER(?)";
-    private static String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
+    private static final String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
 
     @Autowired
     private DataSourceManager dataSourceManager;
