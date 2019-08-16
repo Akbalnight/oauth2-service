@@ -1,5 +1,6 @@
 package com.esb.oauthservice.storage;
 
+import com.esb.oauthservice.dto.UserResponseObject;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

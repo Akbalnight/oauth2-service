@@ -16,6 +16,10 @@ import java.util.Map;
 
 import static com.esb.oauthservice.ldap.LdapAttributesConst.ATTRIBUTES;
 
+/**
+ * Description: Извлекает информацию о пользователе из LDAP
+ * @author AsMatveev
+ */
 public class EsbLdapUserDetailsContextMapper
         extends LdapUserDetailsMapper
 {
@@ -32,18 +36,15 @@ public class EsbLdapUserDetailsContextMapper
         Map<String, String> ldapAttributes = new HashMap<>();
         try
         {
-            NamingEnumeration<String> iDs = ctx.getAttributes()
-                                               .getIDs();
+            NamingEnumeration<String> iDs = ctx.getAttributes().getIDs();
             while (iDs.hasMore())
             {
                 try
                 {
                     String id = iDs.next();
-                    ldapAttributes.put(id, String.valueOf(ctx.getAttributes()
-                                                             .get(id)
-                                                             .get()));
+                    ldapAttributes.put(id, String.valueOf(ctx.getAttributes().get(id).get()));
                 }
-                catch (Throwable e)
+                catch (Throwable ignored)
                 {
                 }
             }
@@ -52,20 +53,16 @@ public class EsbLdapUserDetailsContextMapper
         {
             logger.error("Ошибка получения LDAP атрибутов пользователя!", e);
         }
-
-        logger.debug("MERGE ROLES WITH LDAP GROUPS FOR USER: " + username);
+        logger.debug("READ LDAP ATTRIBUTES FOR USER: " + username);
         Map<String, String> userInfo = new HashMap<>();
-        ldapAttributes.entrySet()
-                      .forEach(ldapAttribute ->
-                      {
-                          // Для вывода всех атрибутов пользователя: userInfo.put(ldapAttribute.getKey(),
-                          // ldapAttribute.getValue());
-                          logger.debug(ldapAttribute.getKey() + " : " + ldapAttribute.getValue());
-                          if (ATTRIBUTES.containsKey(ldapAttribute.getKey()))
-                          {
-                              userInfo.put(ATTRIBUTES.get(ldapAttribute.getKey()), ldapAttribute.getValue());
-                          }
-                      });
+        ldapAttributes.forEach((key, value) ->
+        {
+            // Для вывода всех атрибутов пользователя использовать: userInfo.put(key, value);
+            if (ATTRIBUTES.containsKey(key))
+            {
+                userInfo.put(ATTRIBUTES.get(key), value);
+            }
+        });
         details.setUserInfo(userInfo);
         return details;
     }

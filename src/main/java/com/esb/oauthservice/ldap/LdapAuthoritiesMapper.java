@@ -35,19 +35,16 @@ public class LdapAuthoritiesMapper
         Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
         // Добавление ролей соответствующих LDAP группам пользователя
         Map<String, String> rolesMap = usersDao.getLdapAuthoritiesMap();
-        userGroups.forEach(authority ->
-        {
-            rolesMap.keySet()
-                    .forEach(ldapGroup ->
+        userGroups.forEach(authority -> rolesMap.keySet()
+                .forEach(ldapGroup ->
+                {
+                    if (authority.getAuthority()
+                                 .toLowerCase()
+                                 .contains(ldapGroup.toLowerCase()))
                     {
-                        if (authority.getAuthority()
-                                     .toLowerCase()
-                                     .contains(ldapGroup.toLowerCase()))
-                        {
-                            mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
-                        }
-                    });
-        });
+                        mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
+                    }
+                }));
         return mappedAuthorities;
     }
 }

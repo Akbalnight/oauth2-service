@@ -1,4 +1,4 @@
-package com.esb.oauthservice.storage;
+package com.esb.oauthservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -19,12 +19,12 @@ import java.util.List;
 public class UserResponseObject
 {
     /**
-     * Список ролей пользователя
-     */
-    private List<String> roles;
-    /**
      * Id пользователя
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer id;
+    /**
+     * Список ролей пользователя
+     */
+    private List<String> roles;
 }

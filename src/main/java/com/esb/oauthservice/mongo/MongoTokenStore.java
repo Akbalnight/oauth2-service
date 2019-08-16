@@ -1,9 +1,12 @@
 package com.esb.oauthservice.mongo;
 
+import com.esb.oauthservice.dto.ActiveUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.oauth2.common.DefaultExpiringOAuth2RefreshToken;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2RefreshToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
@@ -11,19 +14,21 @@ import org.springframework.security.oauth2.provider.token.AuthenticationKeyGener
 import org.springframework.security.oauth2.provider.token.DefaultAuthenticationKeyGenerator;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.esb.oauthservice.storage.AdditionalInformationConst.USER_ID;
+
 public class MongoTokenStore
         implements TokenStore
 {
 
-    private AuthenticationKeyGenerator authenticationKeyGenerator = new DefaultAuthenticationKeyGenerator();
+    private final AuthenticationKeyGenerator authenticationKeyGenerator = new DefaultAuthenticationKeyGenerator();
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -179,7 +184,7 @@ public class MongoTokenStore
     @Override
     public Collection<OAuth2AccessToken> findTokensByClientIdAndUserName(String clientId, String username)
     {
-        Collection<OAuth2AccessToken> tokens = new ArrayList<OAuth2AccessToken>();
+        Collection<OAuth2AccessToken> tokens = new ArrayList<>();
         Query query = new Query();
         query.addCriteria(Criteria
                 .where(MongoAccessToken.CLIENT_ID)
@@ -198,7 +203,7 @@ public class MongoTokenStore
     @Override
     public Collection<OAuth2AccessToken> findTokensByClientId(String clientId)
     {
-        Collection<OAuth2AccessToken> tokens = new ArrayList<OAuth2AccessToken>();
+        Collection<OAuth2AccessToken> tokens = new ArrayList<>();
         Query query = new Query();
         query.addCriteria(Criteria
                 .where(MongoAccessToken.CLIENT_ID)
@@ -229,15 +234,37 @@ public class MongoTokenStore
                 throw new IllegalStateException("MD5 algorithm not available.  Fatal (should be in the JDK).");
             }
 
-            try
+            byte[] e = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            return String.format("%032x", new Object[]{new BigInteger(1, e)});
+        }
+    }
+
+    /**
+     * Возвращает всех пользоватей сервиса с активными токенами доступа
+     * @param clientId Идентификатор сервиса
+     * @return Возвращает список активных пользователей
+     */
+    public List<ActiveUser> getActiveUsers(String clientId)
+    {
+        List<ActiveUser> activeUsers = new ArrayList<>();
+        Query query = new Query();
+        query.addCriteria(Criteria.where(MongoAccessToken.CLIENT_ID).is(clientId));
+        List<MongoAccessToken> mongoAccessTokens = mongoTemplate.find(query, MongoAccessToken.class);
+
+        for (MongoAccessToken token : mongoAccessTokens)
+        {
+            DefaultOAuth2AccessToken accessToken = (DefaultOAuth2AccessToken) token.getToken();
+            if (!accessToken.isExpired())
             {
-                byte[] e = digest.digest(value.getBytes("UTF-8"));
-                return String.format("%032x", new Object[]{new BigInteger(1, e)});
-            }
-            catch (UnsupportedEncodingException var4)
-            {
-                throw new IllegalStateException("UTF-8 encoding not available.  Fatal (should be in the JDK).");
+                DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) accessToken.getRefreshToken();
+                activeUsers.add(ActiveUser.builder()
+                                          .id((Integer) accessToken.getAdditionalInformation().get(USER_ID))
+                                          .username(token.getUsername())
+                                          .accessTokenExpiration(accessToken.getExpiration())
+                                          .refreshTokenExpiration(refreshToken.getExpiration())
+                                          .build());
             }
         }
+        return activeUsers;
     }
 }

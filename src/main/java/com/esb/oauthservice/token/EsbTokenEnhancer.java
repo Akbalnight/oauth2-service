@@ -1,6 +1,7 @@
-package com.esb.oauthservice.ldap;
+package com.esb.oauthservice.token;
 
-import com.esb.oauthservice.storage.Permission;
+import com.esb.oauthservice.ldap.EsbLdapUserDetails;
+import com.esb.oauthservice.storage.UserData;
 import com.esb.oauthservice.storage.UsersStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,27 +12,30 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.esb.oauthservice.storage.AdditionalInformationConst.*;
+
 /**
- * @author amatveev
- * Description: Добавление в токен информации о пользователе
+ * @author AsMatveev
+ * Description: Добавление в токен информации о пользователе перед сохранением токена в {@code TokenStore}
  */
 public class EsbTokenEnhancer
         implements TokenEnhancer
 {
     @Autowired
     private UsersStorage usersStorage;
+
     @Override
     public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication)
     {
         final Map<String, Object> additionalInfo = new HashMap<>();
         if (authentication.getPrincipal() instanceof UserDetails)
         {
-            usersStorage.checkOrFillUserPermissions(authentication);
-            additionalInfo.putAll(findUserData(authentication));
+            // При создании токена добавим/обновим пользователя в хранилище
+            usersStorage.addUser(authentication);
+            additionalInfo.putAll(getUserInfo(authentication));
 
             if (authentication.getPrincipal() instanceof EsbLdapUserDetails)
             {
@@ -54,21 +58,21 @@ public class EsbTokenEnhancer
         return ldapInfo;
     }
 
-    private Map<String, Object> findUserData(OAuth2Authentication authentication)
+    private Map<String, Object> getUserInfo(OAuth2Authentication authentication)
     {
-        Map<String, Object> userData = new HashMap<>();
+        Map<String, Object> info = new HashMap<>();
+        UserData userData = usersStorage.getUser(authentication);
         String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-        userData.put("username", username);
-        userData.put("roles", authentication.getAuthorities()
-                                            .stream()
-                                            .map(GrantedAuthority::getAuthority)
-                                            .collect(Collectors.joining(", ", "[", "]")));
-        userData.put("permissions", getUserPermissions(authentication));
-        return userData;
-    }
-
-    private List<Permission> getUserPermissions(OAuth2Authentication authentication)
-    {
-       return usersStorage.getUserPermissions(authentication);
+        info.put(USER_NAME, username);
+        info.put(ROLES, authentication.getAuthorities()
+                                      .stream()
+                                      .map(GrantedAuthority::getAuthority)
+                                      .collect(Collectors.joining(", ", "[", "]")));
+        info.put(PERMISSIONS, userData.getPermissions());
+        if (userData.getUserResponseObject().getId() != null)
+        {
+            info.put(USER_ID, userData.getUserResponseObject().getId());
+        }
+        return info;
     }
 }

@@ -4,16 +4,13 @@ import com.esb.oauthservice.datasource.DataSourceManager;
 import com.esb.oauthservice.logger.Logger;
 import com.esb.oauthservice.storage.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpMethod;
-import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -97,10 +94,7 @@ public class UsersDaoImpl implements UsersDao
         try
         {
             StringJoiner joiner = new StringJoiner(",");
-            roles.forEach(role ->
-            {
-                joiner.add("'" + role + "'");
-            });
+            roles.forEach(role -> joiner.add("'" + role + "'"));
 
             final String SQL_GET_PERMISSIONS_FROM_ROLES =
                     "SELECT DISTINCT p.id, p.method, p.path FROM permissions AS p JOIN role_permissions AS rp ON" +
@@ -129,19 +123,14 @@ public class UsersDaoImpl implements UsersDao
     public HashMap<String, String> getLdapAuthoritiesMap()
     {
         final String SQL_GET_LDAP_ROLES = "SELECT ldap_group, role FROM ldap_roles";
-        return jdbcTemplate.query(SQL_GET_LDAP_ROLES, new ResultSetExtractor<HashMap<String, String>>()
+        return jdbcTemplate.query(SQL_GET_LDAP_ROLES, rs ->
         {
-            @Override
-            public HashMap<String, String> extractData(ResultSet rs)
-                    throws SQLException, DataAccessException
+            HashMap<String, String> mapRet = new HashMap<>();
+            while (rs.next())
             {
-                HashMap<String, String> mapRet = new HashMap<String, String>();
-                while (rs.next())
-                {
-                    mapRet.put(rs.getString("ldap_group"), rs.getString("role"));
-                }
-                return mapRet;
+                mapRet.put(rs.getString("ldap_group"), rs.getString("role"));
             }
+            return mapRet;
         });
     }
 }
