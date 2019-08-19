@@ -250,8 +250,7 @@ public class MongoTokenStore
         Query query = new Query();
         query.addCriteria(Criteria.where(MongoAccessToken.CLIENT_ID).is(clientId));
         List<MongoAccessToken> mongoAccessTokens = mongoTemplate.find(query, MongoAccessToken.class);
-
-        for (MongoAccessToken token : mongoAccessTokens)
+        mongoAccessTokens.forEach(token ->
         {
             DefaultOAuth2AccessToken accessToken = (DefaultOAuth2AccessToken) token.getToken();
             if (!accessToken.isExpired())
@@ -264,7 +263,38 @@ public class MongoTokenStore
                                           .refreshTokenExpiration(refreshToken.getExpiration())
                                           .build());
             }
-        }
+        });
         return activeUsers;
+    }
+
+    /**
+     * Возвращает accessToken указанного пользователя
+     * @param clientId Id сервиса пользователя
+     * @param username Логин пользователя для поиска
+     * @param userId Id пользователя для поиска. Для LDAP пользователей id = null
+     * @return Возвращает accessToken пользователя
+     */
+    public OAuth2AccessToken getTokenForUser(String clientId, String username, Integer userId)
+    {
+        Query query = new Query();
+        query.addCriteria(Criteria
+                .where(MongoAccessToken.CLIENT_ID)
+                .is(clientId));
+        query.addCriteria(Criteria
+                .where(MongoAccessToken.USERNAME)
+                .is(username));
+        List<MongoAccessToken> tokens = mongoTemplate.find(query, MongoAccessToken.class);
+        Integer tokenUserId;
+        for (MongoAccessToken mongoToken : tokens)
+        {
+            DefaultOAuth2AccessToken accessToken = (DefaultOAuth2AccessToken) mongoToken.getToken();
+            tokenUserId = (Integer) accessToken.getAdditionalInformation().get(USER_ID);
+            // Для LDAP пользователей userId и tokenUserId будут null
+            if (userId == tokenUserId)
+            {
+                return mongoToken.getToken();
+            }
+        }
+        return null;
     }
 }

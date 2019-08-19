@@ -103,6 +103,19 @@ public class UsersStorageImpl
         }
     }
 
+    @Override
+    public void removeUser(String username, boolean isLdapUser)
+    {
+        if (isLdapUser)
+        {
+            usersLdap.remove(username);
+        }
+        else
+        {
+            usersDb.remove(username);
+        }
+    }
+
     /**
      * Заполняет пермиссии пользователя из БД
      * @param login Логин пользователя

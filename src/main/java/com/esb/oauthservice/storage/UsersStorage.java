@@ -47,4 +47,11 @@ public interface UsersStorage
      * @param authentication Данные аутентификации пользователя
      */
     void removeUser(OAuth2Authentication authentication);
+
+    /**
+     * Удаляет пользователя из хранилища
+     * @param username Логин пользователя
+     * @param isLdapUser Флаг true если пользователь LDAP, false если пользователь из БД
+     */
+    void removeUser(String username, boolean isLdapUser);
 }
