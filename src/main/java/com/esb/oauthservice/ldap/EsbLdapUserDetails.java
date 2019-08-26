@@ -1,18 +1,22 @@
 package com.esb.oauthservice.ldap;
 
+import com.esb.oauthservice.userdetails.EsbUserDetails;
+import com.esb.oauthservice.storage.Permission;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.security.ldap.userdetails.LdapUserDetails;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Description: Обертка {@code LdapUserDetails} с дополнительными данными пользователя из LDAP
  * @author AsMatveev
  */
 public class EsbLdapUserDetails
-        implements LdapUserDetails
+        implements LdapUserDetails, EsbUserDetails
 {
     private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
     private LdapUserDetails details;
@@ -20,6 +24,11 @@ public class EsbLdapUserDetails
      * Данные пользователя из LDAP. Формируются с помощью {@code LdapAttributesConst}
      */
     private Map<String, String> userInfo;
+
+    /**
+     * Пермиссии формируются по ролям пользователя, полученным после сопоставления LDAP групп и ролей
+     */
+    private List<Permission> permissions;
 
     public EsbLdapUserDetails(LdapUserDetails details)
     {
@@ -34,6 +43,39 @@ public class EsbLdapUserDetails
     public void setUserInfo(Map<String, String> userInfo)
     {
         this.userInfo = userInfo;
+    }
+
+    @Override
+    public List<Permission> getPermissions()
+    {
+        return permissions;
+    }
+
+    public void setPermissions(List<Permission> permissions)
+    {
+        this.permissions = permissions;
+    }
+
+    @Override
+    public Integer getUserId()
+    {
+        // Для LDAP пользователей userId = null
+        return null;
+    }
+
+    @Override
+    public String getName()
+    {
+        return details.getUsername();
+    }
+
+    @Override
+    public List<String> getRoles()
+    {
+        return details.getAuthorities()
+                      .stream()
+                      .map(GrantedAuthority::getAuthority)
+                      .collect(Collectors.toList());
     }
 
     @Override

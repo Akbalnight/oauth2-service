@@ -1,6 +1,6 @@
 package com.esb.oauthservice.controllers;
 
-import com.esb.oauthservice.dto.ActiveUser;
+import com.esb.oauthservice.dto.UserDTO;
 import com.esb.oauthservice.dto.QueryData;
 import com.esb.oauthservice.exceptions.ServiceException;
 import com.esb.oauthservice.service.AuthService;
@@ -56,7 +56,7 @@ class AuthController
      * @param userData Логин и Id пользователя. Для LDAP пользователей Id = null
      */
     @PostMapping("/revokeTokenForUser")
-    public void revokeTokenByUsername(OAuth2Authentication authentication, @RequestBody ActiveUser userData)
+    public void revokeTokenByUsername(OAuth2Authentication authentication, @RequestBody UserDTO userData)
     {
         service.verifyAccess(authentication,  QueryData.builder()
                                                .method(HttpMethod.POST)
@@ -72,7 +72,7 @@ class AuthController
      * @throws ServiceException Исключение елси у текущего пользователя нет доступа к методу
      */
     @GetMapping(value = "/activeUsers")
-    public List<ActiveUser> getActiveUsers(OAuth2Authentication authentication)
+    public List<UserDTO> getActiveUsers(OAuth2Authentication authentication)
             throws ServiceException
     {
         service.verifyAccess(authentication, QueryData.builder()

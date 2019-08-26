@@ -1,11 +1,9 @@
 package com.esb.oauthservice.token;
 
+import com.esb.oauthservice.userdetails.EsbUserDetails;
+import com.esb.oauthservice.database.UsersDao;
 import com.esb.oauthservice.ldap.EsbLdapUserDetails;
-import com.esb.oauthservice.storage.UserData;
-import com.esb.oauthservice.storage.UsersStorage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
@@ -25,18 +23,18 @@ public class EsbTokenEnhancer
         implements TokenEnhancer
 {
     @Autowired
-    private UsersStorage usersStorage;
+    private UsersDao usersDao;
 
+    /**
+     * Добавление в токен информации о пользователе
+     */
     @Override
     public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication)
     {
         final Map<String, Object> additionalInfo = new HashMap<>();
-        if (authentication.getPrincipal() instanceof UserDetails)
+        if (authentication.getPrincipal() instanceof EsbUserDetails)
         {
-            // При создании токена добавим/обновим пользователя в хранилище
-            usersStorage.addUser(authentication);
-            additionalInfo.putAll(getUserInfo(authentication));
-
+            additionalInfo.putAll(getUserInfo((EsbUserDetails) authentication.getPrincipal()));
             if (authentication.getPrincipal() instanceof EsbLdapUserDetails)
             {
                 // Для LDAP пользователей сохраняются данные из LDAP
@@ -47,6 +45,10 @@ public class EsbTokenEnhancer
         return accessToken;
     }
 
+    /**
+     * Формирует данные пользователя, полученные из LDAP
+     * @param principal Данные пользователя
+     */
     private Map<String, Object> getLdapInfo(EsbLdapUserDetails principal)
     {
         Map<String, Object> ldapInfo = new HashMap<>();
@@ -58,20 +60,20 @@ public class EsbTokenEnhancer
         return ldapInfo;
     }
 
-    private Map<String, Object> getUserInfo(OAuth2Authentication authentication)
+    /**
+     * Формирует список пермиссиий, логин, id и список ролей пользователя
+     * @param userDetails Данные пользователя
+     */
+    private Map<String, Object> getUserInfo(EsbUserDetails userDetails)
     {
         Map<String, Object> info = new HashMap<>();
-        UserData userData = usersStorage.getUser(authentication);
-        String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-        info.put(USER_NAME, username);
-        info.put(ROLES, authentication.getAuthorities()
-                                      .stream()
-                                      .map(GrantedAuthority::getAuthority)
-                                      .collect(Collectors.joining(", ", "[", "]")));
-        info.put(PERMISSIONS, userData.getPermissions());
-        if (userData.getUserResponseObject().getId() != null)
+        info.put(USER_NAME, userDetails.getName());
+        info.put(ROLES, userDetails.getRoles()
+                                      .stream().collect(Collectors.joining(", ", "[", "]")));
+        info.put(PERMISSIONS, userDetails.getPermissions());
+        if (userDetails.getUserId() != null)
         {
-            info.put(USER_ID, userData.getUserResponseObject().getId());
+            info.put(USER_ID, userDetails.getUserId());
         }
         return info;
     }

@@ -1,6 +1,7 @@
 package com.esb.oauthservice.mongo;
 
-import com.esb.oauthservice.dto.ActiveUser;
+import com.esb.oauthservice.dto.UserDTO;
+import com.esb.oauthservice.userdetails.EsbUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -21,8 +22,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import static com.esb.oauthservice.storage.AdditionalInformationConst.USER_ID;
 
 public class MongoTokenStore
         implements TokenStore
@@ -244,9 +243,9 @@ public class MongoTokenStore
      * @param clientId Идентификатор сервиса
      * @return Возвращает список активных пользователей
      */
-    public List<ActiveUser> getActiveUsers(String clientId)
+    public List<UserDTO> getActiveUsers(String clientId)
     {
-        List<ActiveUser> activeUsers = new ArrayList<>();
+        List<UserDTO> activeUsers = new ArrayList<>();
         Query query = new Query();
         query.addCriteria(Criteria.where(MongoAccessToken.CLIENT_ID).is(clientId));
         List<MongoAccessToken> mongoAccessTokens = mongoTemplate.find(query, MongoAccessToken.class);
@@ -256,12 +255,14 @@ public class MongoTokenStore
             if (!accessToken.isExpired())
             {
                 DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) accessToken.getRefreshToken();
-                activeUsers.add(ActiveUser.builder()
-                                          .id((Integer) accessToken.getAdditionalInformation().get(USER_ID))
-                                          .username(token.getUsername())
-                                          .accessTokenExpiration(accessToken.getExpiration())
-                                          .refreshTokenExpiration(refreshToken.getExpiration())
-                                          .build());
+
+                EsbUserDetails userDetails = (EsbUserDetails) token.getAuthentication().getPrincipal();
+                activeUsers.add(UserDTO.builder()
+                                       .id(userDetails.getUserId())
+                                       .username(userDetails.getName())
+                                       .accessTokenExpiration(accessToken.getExpiration())
+                                       .refreshTokenExpiration(refreshToken.getExpiration())
+                                       .build());
             }
         });
         return activeUsers;
@@ -287,8 +288,8 @@ public class MongoTokenStore
         Integer tokenUserId;
         for (MongoAccessToken mongoToken : tokens)
         {
-            DefaultOAuth2AccessToken accessToken = (DefaultOAuth2AccessToken) mongoToken.getToken();
-            tokenUserId = (Integer) accessToken.getAdditionalInformation().get(USER_ID);
+            EsbUserDetails userDetails = (EsbUserDetails) mongoToken.getAuthentication().getPrincipal();
+            tokenUserId = userDetails.getUserId();
             // Для LDAP пользователей userId и tokenUserId будут null
             if (userId == tokenUserId)
             {

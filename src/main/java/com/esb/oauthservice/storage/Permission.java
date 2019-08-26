@@ -1,6 +1,8 @@
 package com.esb.oauthservice.storage;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.http.HttpMethod;
 
@@ -12,6 +14,8 @@ import org.springframework.http.HttpMethod;
  */
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Permission
 {
     /**

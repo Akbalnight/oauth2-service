@@ -1,12 +1,14 @@
 package com.esb.oauthservice.mongo;
 
+import com.esb.oauthservice.userdetails.EsbUser;
 import com.esb.oauthservice.ldap.EsbLdapUserDetails;
+import com.esb.oauthservice.storage.Permission;
 import org.bson.Document;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.ldap.userdetails.LdapUserDetailsImpl;
 
 import java.util.*;
@@ -41,9 +43,9 @@ public class UsernamePasswordAuthenticationTokenConverter
         {
             return convertEsbLdapUserDetails(principal);
         }
-        else if (principal.get("_class").equals(User.class.getName()))
+        else if (principal.get("_class").equals(EsbUser.class.getName()))
         {
-            return convertUser(principal);
+            return convertEsbUser(principal);
         }
         else
         {
@@ -51,18 +53,28 @@ public class UsernamePasswordAuthenticationTokenConverter
         }
     }
 
-    private User convertUser(Document principal)
+    private EsbUser convertEsbUser(Document principal)
     {
-        User user = new User(
+        EsbUser user = new EsbUser(
                 principal.getString("username"),
                 "",
                 principal.getBoolean("enabled"),
                 principal.getBoolean("accountNonExpired"),
                 principal.getBoolean("credentialsNonExpired"),
                 principal.getBoolean("accountNonLocked"),
-                getAuthorities((List) principal.get("authorities")));
+                getAuthorities((List) principal.get("authorities")),
+                principal.getInteger("userId"),
+                getPermissions((List) principal.get("permissions")));
         user.eraseCredentials();
         return user;
+    }
+
+    private List<Permission> getPermissions(List<Map<String, String>> permissions)
+    {
+        List<Permission> result = new ArrayList<>(permissions.size());
+        permissions.forEach((permission) -> result.add(new Permission(HttpMethod.valueOf(permission.get("method")),
+                permission.get("path"))));
+        return result;
     }
 
     private EsbLdapUserDetails convertEsbLdapUserDetails(Document principal)
@@ -81,6 +93,7 @@ public class UsernamePasswordAuthenticationTokenConverter
 
         EsbLdapUserDetails esbLdapUserDetails = new EsbLdapUserDetails(essence.createUserDetails());
         esbLdapUserDetails.setUserInfo(convertMap((Document) principal.get("userInfo")));
+        esbLdapUserDetails.setPermissions(getPermissions((List) principal.get("permissions")));
         return esbLdapUserDetails;
     }
 
