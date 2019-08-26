@@ -1,19 +1,21 @@
 package com.esb.oauthservice.config;
 
+import com.esb.oauthservice.database.UsersDaoImpl;
+import com.esb.oauthservice.userdetails.EsbDbUserDetailsService;
 import com.esb.oauthservice.datasource.DataSourceManager;
 import com.esb.oauthservice.ldap.EsbLdapUserDetailsContextMapper;
-import com.esb.oauthservice.ldap.LdapAuthoritiesMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
@@ -33,17 +35,75 @@ import javax.sql.DataSource;
 public class SecurityConfig
         extends WebSecurityConfigurerAdapter
 {
-    private static final String SQL_GET_USERS_BY_NAME =
-            "select username,password, enabled from users where username=LOWER(?)";
+    @Value("${auth.ldap.url:}")
+    private String ldapUrl;
+
+    @Value("${auth.ldap.domen:}")
+    private String ldapDomen;
+
+    private static final String SQL_GET_USERS_BY_NAME = "select username,password, enabled from users where username=LOWER(?)";
     private static final String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
 
     @Autowired
     private DataSourceManager dataSourceManager;
 
+    @Autowired
+    public void configAuthentication(AuthenticationManagerBuilder auth)
+    {
+        auth.authenticationProvider(daoAuthenticationProvider());
+        if (!ldapUrl.isEmpty() && !ldapDomen.isEmpty())
+        {
+            auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
+        }
+    }
+
+    /**
+     * Конфигурация провайдера аутентификации из БД
+     */
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider()
+    {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(esbDbUserDetailsService());
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+        return daoAuthenticationProvider;
+    }
+
+    /**
+     * {@code UserDetailsService} из БД
+     */
+    @Bean
+    public UserDetailsService esbDbUserDetailsService()
+    {
+        EsbDbUserDetailsService service = new EsbDbUserDetailsService();
+        service.setDataSource(jdbcDataSource());
+        service.setUsersByUsernameQuery(SQL_GET_USERS_BY_NAME);
+        service.setAuthoritiesByUsernameQuery(SQL_AUTORITIES_BY_NAME);
+        return service;
+    }
+
+    /**
+     * Провайдер LDAP аутентификации
+     * @return {@link AuthenticationProvider}
+     */
+    @Bean
+    public AuthenticationProvider activeDirectoryLdapAuthenticationProvider()
+    {
+        ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider(ldapDomen,
+                ldapUrl);
+        provider.setConvertSubErrorCodesToExceptions(true);
+        provider.setUseAuthenticationRequestCredentials(true);
+        provider.setUserDetailsContextMapper(userDetailsContextMapper());
+        return provider;
+    }
+
+    /**
+     * База данных пользователей
+     */
     @Bean
     public DataSource jdbcDataSource()
     {
-        return dataSourceManager.getDataSource("users");
+        return dataSourceManager.getDataSource(UsersDaoImpl.DB_NAME);
     }
 
     @Override
@@ -59,52 +119,6 @@ public class SecurityConfig
     {
         // в БД хранятся пароли в виде хэшей BCrypt
         return new BCryptPasswordEncoder();
-    }
-
-    @Value("${auth.ldap.url:}")
-    private String ldapUrl;
-
-    @Value("${auth.ldap.domen:}")
-    private String ldapDomen;
-
-    @Autowired
-    public void configAuthentication(AuthenticationManagerBuilder auth)
-            throws Exception
-    {
-        auth.jdbcAuthentication()
-            .dataSource(jdbcDataSource())
-            .passwordEncoder(passwordEncoder())
-            .usersByUsernameQuery(SQL_GET_USERS_BY_NAME)
-            .authoritiesByUsernameQuery(SQL_AUTORITIES_BY_NAME);
-        if (!ldapUrl.isEmpty() && !ldapDomen.isEmpty())
-        {
-            auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
-        }
-    }
-
-    /**
-     * Провайдер LDAP аутентификации
-     * @return {@link AuthenticationProvider}
-     */
-    @Bean
-    public AuthenticationProvider activeDirectoryLdapAuthenticationProvider()
-    {
-        ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider(ldapDomen,
-                ldapUrl);
-        provider.setConvertSubErrorCodesToExceptions(true);
-        provider.setUseAuthenticationRequestCredentials(true);
-        provider.setAuthoritiesMapper(ldapAuthoritiesMapper());
-        provider.setUserDetailsContextMapper(userDetailsContextMapper());
-        return provider;
-    }
-
-    /**
-     * Сопоставляет LDAP группы пользователя с ролями из БД
-     */
-    @Bean
-    public GrantedAuthoritiesMapper ldapAuthoritiesMapper()
-    {
-        return new LdapAuthoritiesMapper();
     }
 
     /**

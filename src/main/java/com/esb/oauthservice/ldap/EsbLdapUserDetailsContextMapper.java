@@ -1,18 +1,18 @@
 package com.esb.oauthservice.ldap;
 
+import com.esb.oauthservice.database.UsersDao;
 import com.esb.oauthservice.logger.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.userdetails.LdapUserDetails;
 import org.springframework.security.ldap.userdetails.LdapUserDetailsMapper;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.esb.oauthservice.ldap.LdapAttributesConst.ATTRIBUTES;
 
@@ -25,14 +25,28 @@ public class EsbLdapUserDetailsContextMapper
 {
     @Autowired
     private Logger logger;
+    @Autowired
+    private UsersDao usersDao;
 
     @Override
     public UserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<?
             extends GrantedAuthority> authorities)
     {
-        UserDetails userDetails = super.mapUserFromContext(ctx, username, authorities);
+        UserDetails userDetails = super.mapUserFromContext(ctx, username, mapAuthorities(authorities));
         EsbLdapUserDetails details = new EsbLdapUserDetails((LdapUserDetails) userDetails);
 
+        details.setUserInfo(getUserInfo(ctx));
+        logger.debug("READ LDAP ATTRIBUTES FOR USER: " + username);
+        details.setPermissions(usersDao.getPermissionsFromRoles(details.getRoles()));
+
+        return details;
+    }
+
+    /**
+     * Считывает данные пользователя из LDAP
+     */
+    private Map<String, String> getUserInfo(DirContextOperations ctx)
+    {
         Map<String, String> ldapAttributes = new HashMap<>();
         try
         {
@@ -53,7 +67,6 @@ public class EsbLdapUserDetailsContextMapper
         {
             logger.error("Ошибка получения LDAP атрибутов пользователя!", e);
         }
-        logger.debug("READ LDAP ATTRIBUTES FOR USER: " + username);
         Map<String, String> userInfo = new HashMap<>();
         ldapAttributes.forEach((key, value) ->
         {
@@ -63,7 +76,29 @@ public class EsbLdapUserDetailsContextMapper
                 userInfo.put(ATTRIBUTES.get(key), value);
             }
         });
-        details.setUserInfo(userInfo);
-        return details;
+        return userInfo;
+    }
+
+    /**
+     * Преобразует группы пользователя из LDAP в роли из БД
+     * @param userGroups Группы пользователя из LDAP
+     * @return Возвращает список ролей пользователя
+     */
+    private Collection<? extends GrantedAuthority> mapAuthorities(Collection<? extends GrantedAuthority> userGroups)
+    {
+        Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+        // Добавление ролей соответствующих LDAP группам пользователя
+        Map<String, String> rolesMap = usersDao.getLdapAuthoritiesMap();
+        userGroups.forEach(authority -> rolesMap.keySet()
+                                                .forEach(ldapGroup ->
+                                                {
+                                                    if (authority.getAuthority()
+                                                                 .toLowerCase()
+                                                                 .contains(ldapGroup.toLowerCase()))
+                                                    {
+                                                        mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
+                                                    }
+                                                }));
+        return mappedAuthorities;
     }
 }

@@ -1,6 +1,7 @@
 package com.esb.oauthservice.database;
 
 import com.esb.oauthservice.datasource.DataSourceManager;
+import com.esb.oauthservice.exceptions.UserNotFoundException;
 import com.esb.oauthservice.logger.Logger;
 import com.esb.oauthservice.storage.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import java.util.*;
 @Component
 public class UsersDaoImpl implements UsersDao
 {
+    public static final String DB_NAME = "users";
     private final NamedParameterJdbcTemplate jdbcTemplate;
     @Autowired
     private Logger logger;
@@ -29,7 +31,7 @@ public class UsersDaoImpl implements UsersDao
     @Autowired
     public UsersDaoImpl(DataSourceManager dataSourceManager)
     {
-        jdbcTemplate = new NamedParameterJdbcTemplate(dataSourceManager.getDataSource("users"));
+        jdbcTemplate = new NamedParameterJdbcTemplate(dataSourceManager.getDataSource(DB_NAME));
     }
 
     @Override
@@ -63,7 +65,7 @@ public class UsersDaoImpl implements UsersDao
 
     @Override
     public Integer getUserId(String login)
-    {//TODO добавить приведение логина в нижн регистр?
+    {
         try
         {
             final String SQL_GET_USER_ID = "SELECT user_id FROM users WHERE username = :username";
@@ -72,7 +74,7 @@ public class UsersDaoImpl implements UsersDao
         }
         catch (EmptyResultDataAccessException e)
         {
-            return 0;
+            throw new UserNotFoundException(login);
         }
     }
 

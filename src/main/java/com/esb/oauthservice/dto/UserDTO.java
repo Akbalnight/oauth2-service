@@ -14,7 +14,7 @@ import java.util.Date;
 @Builder
 @Getter
 @Setter
-public class ActiveUser
+public class UserDTO
 {
     /**
      * Id пользователя. Может быть null если пользователь LDAP
