@@ -28,7 +28,8 @@ public class EsbDbUserDetailsService
             throws UsernameNotFoundException
     {
         UserDetails user = super.loadUserByUsername(username);
-        EsbUser esbUser = new EsbUser(user.getUsername(), user.getPassword(), user.isEnabled(),
+        username = user.getUsername(); // Используем логин из БД для поддережки регистра
+        EsbUser esbUser = new EsbUser(username, user.getPassword(), user.isEnabled(),
                 user.isAccountNonExpired(), user.isCredentialsNonExpired(), user.isAccountNonLocked(),
                 user.getAuthorities(), usersDao.getUserId(username), usersDao.getUserPermissions(username));
         return esbUser;
