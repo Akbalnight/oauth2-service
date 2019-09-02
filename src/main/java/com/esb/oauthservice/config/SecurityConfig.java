@@ -127,6 +127,6 @@ public class SecurityConfig
     @Bean
     public UserDetailsContextMapper userDetailsContextMapper()
     {
-        return new EsbLdapUserDetailsContextMapper();
+        return new EsbLdapUserDetailsContextMapper(ldapDomen);
     }
 }

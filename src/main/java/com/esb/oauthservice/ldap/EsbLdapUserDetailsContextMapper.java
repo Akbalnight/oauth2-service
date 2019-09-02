@@ -28,10 +28,18 @@ public class EsbLdapUserDetailsContextMapper
     @Autowired
     private UsersDao usersDao;
 
+    private final String ldapDomen;
+
+    public EsbLdapUserDetailsContextMapper(String ldapDomen)
+    {
+        this.ldapDomen = ldapDomen;
+    }
+
     @Override
     public UserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<?
             extends GrantedAuthority> authorities)
     {
+        username = prepareUsername(username);
         UserDetails userDetails = super.mapUserFromContext(ctx, username, mapAuthorities(authorities));
         EsbLdapUserDetails details = new EsbLdapUserDetails((LdapUserDetails) userDetails);
 
@@ -40,6 +48,17 @@ public class EsbLdapUserDetailsContextMapper
         details.setPermissions(usersDao.getPermissionsFromRoles(details.getRoles()));
 
         return details;
+    }
+
+    private String prepareUsername(String login)
+    {
+        login = login.toLowerCase();
+        // Добавим домен к логину пользователя если он не указан
+        if (!login.endsWith("@" + ldapDomen))
+        {
+            login = login + "@" + ldapDomen;
+        }
+        return login;
     }
 
     /**
