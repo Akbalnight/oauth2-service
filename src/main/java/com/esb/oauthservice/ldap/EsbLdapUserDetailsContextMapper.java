@@ -30,6 +30,10 @@ public class EsbLdapUserDetailsContextMapper
 
     private final String ldapDomen;
 
+    /**
+     * Конструктор
+     * @param ldapDomen Домен LDAP сервера
+     */
     public EsbLdapUserDetailsContextMapper(String ldapDomen)
     {
         this.ldapDomen = ldapDomen;

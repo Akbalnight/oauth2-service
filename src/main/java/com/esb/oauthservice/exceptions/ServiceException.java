@@ -41,7 +41,7 @@ public class ServiceException
     {
         return ExceptionResponseObject.builder()
                                       .status(status.value())
-                                      .message(errorMessage)
+                                      .error_description(errorMessage)
                                       .build();
     }
 }

@@ -1,8 +1,8 @@
 package com.esb.oauthservice.storage;
 
-import com.esb.oauthservice.exceptions.BadRequestException;
-import com.esb.oauthservice.exceptions.ServiceException;
 import com.esb.oauthservice.dto.QueryData;
+import com.esb.oauthservice.logger.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -17,6 +17,8 @@ import java.util.List;
 public class AccessChecker
 {
     private final AntPathMatcher matcher = new AntPathMatcher();
+    @Autowired
+    private Logger logger;
 
     /**
      * Проверка доступа к запросу по списку пермиссий
@@ -26,8 +28,12 @@ public class AccessChecker
      */
     public boolean isHaveAccess(List<Permission> permissions, QueryData queryData)
     {
-        verifyQueryData(queryData);
-        return matchPermission(permissions, queryData.getMethod(), queryData.getPath());
+        if (verifyQueryData(queryData))
+        {
+            return matchPermission(permissions, queryData.getMethod(), queryData.getPath());
+        }
+        // Если данные запроса не указаны, то не проверяем доступ
+        return true;
     }
 
     private boolean matchPermission(List<Permission> permissions, HttpMethod method, String path)
@@ -36,12 +42,13 @@ public class AccessChecker
                           .anyMatch(permission -> permission.getMethod() == method && matcher.match(permission.getPath(), path));
     }
 
-    private void verifyQueryData(QueryData queryData)
-            throws ServiceException
+    private boolean verifyQueryData(QueryData queryData)
     {
         if (queryData == null || queryData.getMethod() == null || queryData.getPath() == null)
         {
-            throw new BadRequestException("Не указаны параметры запроса!");
+            logger.debug("При проверке доступа не были указаны параметры запроса!");
+            return false;
         }
+        return true;
     }
 }

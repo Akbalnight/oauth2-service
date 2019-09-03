@@ -49,6 +49,7 @@ public class AuthService
         if (accessChecker.isHaveAccess(userData.getPermissions(), queryData))
         {
             return new ResponseEntity<>(UserResponseObject.builder()
+                                                          .username(userData.getName())
                                                           .id(userData.getUserId())
                                                           .roles(userData.getRoles())
                                                           .build(), HttpStatus.OK);

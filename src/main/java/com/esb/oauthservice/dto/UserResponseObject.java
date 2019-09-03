@@ -19,6 +19,10 @@ import java.util.List;
 public class UserResponseObject
 {
     /**
+     * Логин пользователя
+     */
+    private String username;
+    /**
      * Id пользователя
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
