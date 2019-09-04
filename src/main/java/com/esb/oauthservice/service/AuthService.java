@@ -8,6 +8,7 @@ import com.esb.oauthservice.exceptions.ForbiddenQueryException;
 import com.esb.oauthservice.exceptions.ServiceException;
 import com.esb.oauthservice.exceptions.UserNotFoundException;
 import com.esb.oauthservice.mongo.MongoTokenStore;
+import com.esb.oauthservice.resourcemanager.ResourceManager;
 import com.esb.oauthservice.storage.AccessChecker;
 import com.esb.oauthservice.userdetails.EsbUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static com.esb.oauthservice.resourcemanager.ResourceManager.*;
 
 /**
  * Description: Сервис для работы с пользователями
@@ -34,6 +37,8 @@ public class AuthService
     private MongoTokenStore tokenStore;
     @Autowired
     private DefaultTokenServices tokenServices;
+    @Autowired
+    private ResourceManager resources;
 
     /**
      * Проверка доступа пользователя к запросу
@@ -54,7 +59,8 @@ public class AuthService
                                                           .roles(userData.getRoles())
                                                           .build(), HttpStatus.OK);
         }
-        throw new ForbiddenQueryException(authentication.getName(), queryData);
+        throw new ForbiddenQueryException(resources.getResource(FORBIDDEN_QUERY, authentication.getName(),
+                queryData.getMethod(), queryData.getPath()));
     }
 
     /**
@@ -92,13 +98,13 @@ public class AuthService
     {
         if (username == null)
         {
-            throw new BadRequestException("Имя пользователя не указано!");
+            throw new BadRequestException(resources.getResource(USER_NAME_NOT_SPECIFIED));
         }
 
         OAuth2AccessToken token = tokenStore.getTokenForUser(clientId, username, userId);
         if (token == null)
         {
-            throw new UserNotFoundException(username);
+            throw new UserNotFoundException(resources.getResource(USER_NOT_FOUND, username));
         }
         tokenServices.revokeToken(token.getValue());
     }
@@ -115,7 +121,8 @@ public class AuthService
         EsbUserDetails currentUser = findUserData(authentication);
         if (!accessChecker.isHaveAccess(currentUser.getPermissions(), query))
         {
-            throw new ForbiddenQueryException(currentUser.getName(), query);
+            throw new ForbiddenQueryException(resources.getResource(FORBIDDEN_QUERY, currentUser.getName(),
+                    query.getMethod(), query.getPath()));
         }
     }
 
@@ -123,7 +130,7 @@ public class AuthService
      * Возвращет объект {@link EsbUserDetails} текущего пользователя
      * @param authentication Данные аутентификации пользователя
      * @return Возвращает данные пользователя
-     * @throws UserNotFoundException
+     * @throws UserNotFoundException Исключение при ошибке получения данных аутентификации пользователя
      */
     private EsbUserDetails findUserData(OAuth2Authentication authentication)
             throws UserNotFoundException
@@ -132,6 +139,6 @@ public class AuthService
         {
             return (EsbUserDetails) authentication.getPrincipal();
         }
-        throw new UserNotFoundException(authentication.getName());
+        throw new UserNotFoundException(resources.getResource(USER_NOT_FOUND, authentication.getName()));
     }
 }

@@ -3,6 +3,7 @@ package com.esb.oauthservice.database;
 import com.esb.oauthservice.datasource.DataSourceManager;
 import com.esb.oauthservice.exceptions.UserNotFoundException;
 import com.esb.oauthservice.logger.Logger;
+import com.esb.oauthservice.resourcemanager.ResourceManager;
 import com.esb.oauthservice.storage.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.util.*;
+
+import static com.esb.oauthservice.resourcemanager.ResourceManager.USER_NOT_FOUND;
 
 /**
  * UsersDaoImpl.java
@@ -27,6 +30,8 @@ public class UsersDaoImpl implements UsersDao
     private final NamedParameterJdbcTemplate jdbcTemplate;
     @Autowired
     private Logger logger;
+    @Autowired
+    private ResourceManager resources;
 
     @Autowired
     public UsersDaoImpl(DataSourceManager dataSourceManager)
@@ -74,7 +79,7 @@ public class UsersDaoImpl implements UsersDao
         }
         catch (EmptyResultDataAccessException e)
         {
-            throw new UserNotFoundException(login);
+            throw new UserNotFoundException(resources.getResource(USER_NOT_FOUND, login));
         }
     }
 
