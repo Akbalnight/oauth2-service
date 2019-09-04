@@ -24,7 +24,7 @@ apply plugin: "org.sonarqube"
 apply plugin: 'jacoco'
 
 
-group = 'com.esb'
+group = 'com.assd'
 version appVersion + buildNumber
 sourceCompatibility = 1.8
 
