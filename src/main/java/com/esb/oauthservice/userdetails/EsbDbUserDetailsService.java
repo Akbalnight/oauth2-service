@@ -29,9 +29,8 @@ public class EsbDbUserDetailsService
     {
         UserDetails user = super.loadUserByUsername(username);
         username = user.getUsername(); // Используем логин из БД для поддережки регистра
-        EsbUser esbUser = new EsbUser(username, user.getPassword(), user.isEnabled(),
+        return new EsbUser(username, user.getPassword(), user.isEnabled(),
                 user.isAccountNonExpired(), user.isCredentialsNonExpired(), user.isAccountNonLocked(),
                 user.getAuthorities(), usersDao.getUserId(username), usersDao.getUserPermissions(username));
-        return esbUser;
     }
 }

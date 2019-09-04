@@ -1,6 +1,5 @@
 package com.esb.oauthservice.exceptions;
 
-import com.esb.oauthservice.dto.QueryData;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -11,12 +10,10 @@ public class ForbiddenQueryException
         extends ServiceException
 {
     /**
-     * @param name      Логин пользователя
-     * @param queryData Данные запроса
+     * @param message Сообщение с данными пользователя и запроса
      */
-    public ForbiddenQueryException(String name, QueryData queryData)
+    public ForbiddenQueryException(String message)
     {
-        super(HttpStatus.FORBIDDEN, String.format("У пользователя '%s' нет доступа к методу %s '%s'", name,
-                queryData.getMethod(), queryData.getPath()));
+        super(HttpStatus.FORBIDDEN, message);
     }
 }
