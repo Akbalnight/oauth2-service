@@ -4,6 +4,7 @@ import com.assd.oauthservice.storage.Permission;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author amatveev
@@ -39,4 +40,26 @@ public interface UsersDao
      * @param roles Список ролей
      */
     List<Permission> getPermissionsFromRoles(List<String> roles);
+
+    /**
+     * Добавляет пользователя из LDAP в БД
+     * @param username Логин пользователя
+     * @param userInfo Данные пользователя из LDAP
+     * @return Возвращает id добавленного пользователя
+     */
+    Integer addUserFromLdap(String username, Map<String, String> userInfo);
+
+    /**
+     * Обновляет роли пользователя в БД
+     * @param username Логин пользователя
+     * @param roles Список ролей пользователя
+     */
+    void updateUserRoles(String username, Set<String> roles);
+
+    /**
+     * Возвращает роли пользователя, у которых нет метки LDAP
+     * @param username Логин пользователя
+     * @return Возвращает список ролей
+     */
+    List<String> getNotLdapUserRoles(String username);
 }

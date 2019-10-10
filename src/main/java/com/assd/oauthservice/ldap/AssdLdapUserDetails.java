@@ -20,6 +20,7 @@ public class AssdLdapUserDetails
 {
     private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
     private LdapUserDetails details;
+    private Integer userId;
     /**
      * Данные пользователя из LDAP. Формируются с помощью {@code LdapAttributesConst}
      */
@@ -59,8 +60,12 @@ public class AssdLdapUserDetails
     @Override
     public Integer getUserId()
     {
-        // Для LDAP пользователей userId = null
-        return null;
+        return userId;
+    }
+
+    public void setUserId(Integer userId)
+    {
+        this.userId = userId;
     }
 
     @Override

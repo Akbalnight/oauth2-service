@@ -94,6 +94,7 @@ public class UsernamePasswordAuthenticationTokenConverter
         AssdLdapUserDetails assdLdapUserDetails = new AssdLdapUserDetails(essence.createUserDetails());
         assdLdapUserDetails.setUserInfo(convertMap((Document) principal.get("userInfo")));
         assdLdapUserDetails.setPermissions(getPermissions((List) principal.get("permissions")));
+        assdLdapUserDetails.setUserId(principal.getInteger("userId"));
         return assdLdapUserDetails;
     }
 

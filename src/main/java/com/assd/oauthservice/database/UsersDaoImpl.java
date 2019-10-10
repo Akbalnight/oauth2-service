@@ -1,19 +1,27 @@
 package com.assd.oauthservice.database;
 
+import com.assd.oauthservice.datasource.DataSourceManager;
 import com.assd.oauthservice.exceptions.UserNotFoundException;
 import com.assd.oauthservice.logger.Logger;
 import com.assd.oauthservice.resourcemanager.ResourceManager;
-import com.assd.oauthservice.datasource.DataSourceManager;
 import com.assd.oauthservice.storage.Permission;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.util.*;
+
+import static com.assd.oauthservice.ldap.LdapAttributesConst.MAIL;
 
 /**
  * UsersDaoImpl.java
@@ -25,11 +33,31 @@ import java.util.*;
 public class UsersDaoImpl implements UsersDao
 {
     public static final String DB_NAME = "users";
+
+    private static final String SQL_SELECT_USER_ID_BY_USERNAME = "SELECT user_id FROM users WHERE username = :username";
+
+    final String SQL_SELECT_ROLES_BY_USERNAME = "SELECT role FROM user_roles WHERE username = :username";
+
+    private static final String SQL_INSERT_USER_ROLES = "INSERT INTO user_roles (username, role) VALUES (:username, :role)";
+    private static final String SQL_DELETE_USER_ROLES = "DELETE FROM user_roles WHERE username=:username";
+    private static final String SQL_SELECT_ALL_LDAP_ROLES = "SELECT ldap_group, role FROM ldap_roles";
+
+    private static final String SQL_SELECT_PERMISSIONS_BY_USERNAME =
+            "SELECT DISTINCT p.method, p.path FROM permissions AS p JOIN role_permissions AS rp ON " +
+                    "p.id=rp.id_permission JOIN user_roles AS ur on rp.role=ur.role WHERE ur.username = :username";
+
+    private static final String SQL_INSERT_LDAP_USER = "INSERT INTO users(username,password,enabled,email,json_data,ldap) VALUES " +
+            "(:username,:password,:enabled,:email,cast(:jsonData AS JSON),:ldap)";
+    private static final String SQL_SELECT_NOT_LDAP_USER_ROLES = "SELECT role FROM user_roles LEFT JOIN roles ON user_roles.role = roles.name " +
+            "WHERE user_roles.username = :username AND (roles.json_data->>'ldap')::boolean = false";
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
     @Autowired
     private Logger logger;
     @Autowired
     private ResourceManager resources;
+    @Autowired
+    private ObjectMapper jsonMapper;
 
     @Autowired
     public UsersDaoImpl(DataSourceManager dataSourceManager)
@@ -42,10 +70,7 @@ public class UsersDaoImpl implements UsersDao
     {
         try
         {
-            final String SQL_GET_PERMISSIONS_BY_USERNAME =
-                    "SELECT DISTINCT p.method, p.path FROM permissions AS p JOIN role_permissions AS rp ON " +
-                            "p.id=rp.id_permission JOIN user_roles AS ur on rp.role=ur.role WHERE ur.username = :username";
-            return jdbcTemplate.query(SQL_GET_PERMISSIONS_BY_USERNAME, new MapSqlParameterSource("username", login),
+            return jdbcTemplate.query(SQL_SELECT_PERMISSIONS_BY_USERNAME, new MapSqlParameterSource("username", login),
                     (ResultSet rs) ->
             {
                 List<Permission> permissions = new ArrayList<>();
@@ -71,8 +96,7 @@ public class UsersDaoImpl implements UsersDao
     {
         try
         {
-            final String SQL_GET_USER_ID = "SELECT user_id FROM users WHERE username = :username";
-            return jdbcTemplate.queryForObject(SQL_GET_USER_ID, new MapSqlParameterSource("username", login),
+            return jdbcTemplate.queryForObject(SQL_SELECT_USER_ID_BY_USERNAME, new MapSqlParameterSource("username", login),
                     Integer.class);
         }
         catch (EmptyResultDataAccessException e)
@@ -84,8 +108,7 @@ public class UsersDaoImpl implements UsersDao
     @Override
     public List<String> getUserRoles(String login)
     {
-        final String SQL_GET_USER_ROLES = "SELECT role FROM user_roles WHERE username = :username";
-        return jdbcTemplate.queryForList(SQL_GET_USER_ROLES, new MapSqlParameterSource("username", login),
+        return jdbcTemplate.queryForList(SQL_SELECT_ROLES_BY_USERNAME, new MapSqlParameterSource("username", login),
                 String.class);
     }
 
@@ -124,11 +147,81 @@ public class UsersDaoImpl implements UsersDao
         }
     }
 
+    @Transactional
+    @Override
+    public void updateUserRoles(String username, Set<String> roles)
+    {
+        clearUserRoles(username);
+        addRolesToUser(username, roles);
+    }
+
+    @Override
+    public List<String> getNotLdapUserRoles(String username)
+    {
+        return jdbcTemplate.queryForList(SQL_SELECT_NOT_LDAP_USER_ROLES, new MapSqlParameterSource("username", username),
+                String.class);
+    }
+
+    /**
+     * Добавляет роли пользователю
+     * @param username Логин пользователя
+     * @param roles Список ролей
+     */
+    private void addRolesToUser(String username, Set<String> roles)
+    {
+        List<Map<String, Object>> batchValues = new ArrayList<>(roles.size());
+        for (String role : roles)
+        {
+            batchValues.add(new MapSqlParameterSource().addValue("role", role)
+                                                       .addValue("username", username)
+                                                       .getValues());
+        }
+        jdbcTemplate.batchUpdate(SQL_INSERT_USER_ROLES, batchValues.toArray(new Map[roles.size()]));
+    }
+
+    /**
+     * Очищает все роли пользователя
+     * @param username Логин пользователя
+     */
+    private void clearUserRoles(String username)
+    {
+        jdbcTemplate.update(SQL_DELETE_USER_ROLES, new MapSqlParameterSource("username", username));
+    }
+
+    @Override
+    public Integer addUserFromLdap(String username, Map<String, String> userInfo)
+    {
+        String email = userInfo.get(MAIL);
+        if (email != null)
+        {
+            userInfo.remove(MAIL);
+        }
+
+        String json = null;
+        try
+        {
+            json = jsonMapper.writeValueAsString(userInfo);
+        }
+        catch (JsonProcessingException e)
+        {
+            logger.error(e);
+        }
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("username", username);
+        params.addValue("password", new BCryptPasswordEncoder().encode(""));
+        params.addValue("email", email);
+        params.addValue("enabled", true);
+        params.addValue("ldap", true);
+        params.addValue("jsonData", json);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(SQL_INSERT_LDAP_USER, params, keyHolder, new String[]{"user_id"});
+        return keyHolder.getKey().intValue();
+    }
+
     @Override
     public HashMap<String, String> getLdapAuthoritiesMap()
     {
-        final String SQL_GET_LDAP_ROLES = "SELECT ldap_group, role FROM ldap_roles";
-        return jdbcTemplate.query(SQL_GET_LDAP_ROLES, rs ->
+        return jdbcTemplate.query(SQL_SELECT_ALL_LDAP_ROLES, rs ->
         {
             HashMap<String, String> mapRet = new HashMap<>();
             while (rs.next())
