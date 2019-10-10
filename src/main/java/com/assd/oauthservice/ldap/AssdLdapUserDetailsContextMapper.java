@@ -1,6 +1,7 @@
 package com.assd.oauthservice.ldap;
 
 import com.assd.oauthservice.database.UsersDao;
+import com.assd.oauthservice.exceptions.UserNotFoundException;
 import com.assd.oauthservice.logger.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.core.DirContextOperations;
@@ -13,6 +14,7 @@ import org.springframework.security.ldap.userdetails.LdapUserDetailsMapper;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Description: Извлекает информацию о пользователе из LDAP
@@ -42,14 +44,44 @@ public class AssdLdapUserDetailsContextMapper
             extends GrantedAuthority> authorities)
     {
         username = prepareUsername(username);
-        UserDetails userDetails = super.mapUserFromContext(ctx, username, mapAuthorities(authorities));
+        final Collection<? extends GrantedAuthority> roles = mapAuthorities(username, authorities);
+        UserDetails userDetails = super.mapUserFromContext(ctx, username, roles);
         AssdLdapUserDetails details = new AssdLdapUserDetails((LdapUserDetails) userDetails);
+        final Map<String, String> userInfo = getUserInfo(ctx);
+        details.setUserInfo(userInfo);
 
-        details.setUserInfo(getUserInfo(ctx));
+        Integer userId = findUserId(username);
+        if (userId == null)
+        {
+            // После аутентификации через LDAP добавим пользователя в БД
+            userId = usersDao.addUserFromLdap(username, userInfo);
+        }
+        // Перезапишем роли пользователя, полученные из LDAP групп в БД
+        usersDao.updateUserRoles(username, roles.stream()
+                                             .map(GrantedAuthority::getAuthority)
+                                             .collect(Collectors.toSet()));
+        details.setUserId(userId);
         logger.debug("READ LDAP ATTRIBUTES FOR USER: " + username);
         details.setPermissions(usersDao.getPermissionsFromRoles(details.getRoles()));
 
         return details;
+    }
+
+    /**
+     * Возвращает id пользователя из БД по логину
+     * @param username Логин пользователя
+     * @return Возвращает id пользователя
+     */
+    private Integer findUserId(String username)
+    {
+        try
+        {
+            return usersDao.getUserId(username);
+        }
+        catch (UserNotFoundException ex)
+        {
+            return null;
+        }
     }
 
     private String prepareUsername(String login)
@@ -105,21 +137,29 @@ public class AssdLdapUserDetailsContextMapper
      * @param userGroups Группы пользователя из LDAP
      * @return Возвращает список ролей пользователя
      */
-    private Collection<? extends GrantedAuthority> mapAuthorities(Collection<? extends GrantedAuthority> userGroups)
+    private Collection<? extends GrantedAuthority> mapAuthorities(String username, Collection<?
+            extends GrantedAuthority> userGroups)
     {
         Set<GrantedAuthority> mappedAuthorities = new HashSet<>();
+        // Добавление ролей из БД по логину пользователя, которые не были назначены через LDAP
+        List<String> roles = usersDao.getNotLdapUserRoles(username);
+        roles.forEach(role -> mappedAuthorities.add(new SimpleGrantedAuthority(role)));
+
         // Добавление ролей соответствующих LDAP группам пользователя
         Map<String, String> rolesMap = usersDao.getLdapAuthoritiesMap();
-        userGroups.forEach(authority -> rolesMap.keySet()
-                                                .forEach(ldapGroup ->
-                                                {
-                                                    if (authority.getAuthority()
-                                                                 .toLowerCase()
-                                                                 .contains(ldapGroup.toLowerCase()))
-                                                    {
-                                                        mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
-                                                    }
-                                                }));
+        userGroups.forEach(authority -> rolesMap.keySet().forEach(ldapGroup ->
+                {
+                    if (authority.getAuthority().toLowerCase().contains(ldapGroup.toLowerCase()))
+                    {
+                        // Проверка что роль уже не добавлена пользователю
+                        if (!roles.contains(rolesMap.get(ldapGroup)))
+                        {
+                            mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
+                        }
+                        return;
+                    }
+                }));
+        logger.debug("LDAP пользователь " + username + ". Роли: " + mappedAuthorities + ". Группы: " + userGroups);
         return mappedAuthorities;
     }
 }

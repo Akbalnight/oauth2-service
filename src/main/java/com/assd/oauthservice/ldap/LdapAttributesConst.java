@@ -29,4 +29,5 @@ public class LdapAttributesConst
             put("mail", "mail");
         }
     };
+    public static final String MAIL = "mail";
 }
