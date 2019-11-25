@@ -22,7 +22,7 @@ public class Logger
      */
     public void debug(String msg)
     {
-        slf4logger.debug(msg);
+        slf4logger.info(msg);
     }
 
     /**
@@ -55,7 +55,7 @@ public class Logger
     public void debug(String prefix, Throwable th)
     {
         String msg = new StringBuilder(prefix).append("-").append(th.getMessage()).toString();
-        slf4logger.debug(msg);
+        slf4logger.info(msg);
     }
 
     /**
