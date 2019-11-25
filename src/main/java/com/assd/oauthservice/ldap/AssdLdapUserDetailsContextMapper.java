@@ -121,8 +121,10 @@ public class AssdLdapUserDetailsContextMapper
             logger.error("Ошибка получения LDAP атрибутов пользователя!", e);
         }
         Map<String, String> userInfo = new HashMap<>();
+        logger.debug("LDAP ATTRIBUTES: ");
         ldapAttributes.forEach((key, value) ->
         {
+            logger.debug("ATTRIBUTE: " + key + " : " + value);
             // Для вывода всех атрибутов пользователя использовать: userInfo.put(key, value);
             if (LdapAttributesConst.ATTRIBUTES.containsKey(key))
             {

@@ -1,64 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <property name="DEV_HOME" value="${LOGS.LOCATION}" />
+    <property name="APP_NAME" value="${application.name:-spring-app}"/>
 
-    <appender name="FILE-AUDIT"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${DEV_HOME}/debug.log</file>
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+    <property name="LOGS" value="${logs.location:-./log}"/>
+
+    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
             <Pattern>
-                %d{yyyy-MM-dd;HH:mm:ss};%X{sessionId};%X{userId};%msg%n
+                %black(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}): %msg%n%throwable
             </Pattern>
-        </encoder>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <fileNamePattern>${DEV_HOME}/archived/debug.%d{yyyy-MM-dd}.%i.log
-            </fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy
-                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>10MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-        </rollingPolicy>
-
+        </layout>
     </appender>
 
-    <!-- appender name="TRAFFIC-AUDIT"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${DEV_HOME}/net.log</file>
+    <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS}/${APP_NAME}.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <Pattern>
-                %d{yyyy-MM-dd HH:mm:ss} - %msg%n
-            </Pattern>
+            <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
         </encoder>
-
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${DEV_HOME}/archived/net.%d{yyyy-MM-dd}.%i.log
-                        </fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy
-                class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+            <!-- rollover daily and when the file reaches 10 MegaBytes -->
+            <fileNamePattern>${LOGS}/archived/${APP_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>10MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
+    </appender>
 
-    </appender-->
-
-    <logger name="debug" level="debug"
-            additivity="false">
-        <appender-ref ref="FILE-AUDIT" />
-    </logger>
-
-    <!-- logger name="net" level="debug" additivity="false">
-        <appender-ref ref="TRAFFIC-AUDIT" />
-    </logger-->
-
-    <logger name="info" level="info">
-        <appender-ref ref="FILE-AUDIT"/>
-    </logger>
-
-    <root level="error">
-        <appender-ref ref="FILE-AUDIT" />
+    <!-- LOG everything at INFO level -->
+    <root level="info">
+        <appender-ref ref="Console"/>
+        <appender-ref ref="RollingFile"/>
     </root>
 
+    <logger name="org" level="info">
+        <!--<level value="DEBUG" />-->
+        <!--<appender-ref ref="Console"/>-->
+        <!--<appender-ref ref="RollingFile"/>-->
+    </logger>
+
+
+    <logger name="file" level="debug">
+        <appender-ref ref="RollingFile" />
+    </logger>
 </configuration>
