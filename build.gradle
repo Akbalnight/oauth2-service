@@ -1,7 +1,7 @@
 buildscript {
     ext {
-        springBootVersion = '2.0.5.RELEASE' // '2.2.6.RELEASE'
-        springOauth2Version =  '2.3.3.RELEASE' // '2.4.1.RELEASE'
+        springBootVersion = '2.2.6.RELEASE' // '2.0.5.RELEASE' // '2.2.6.RELEASE'
+        springOauth2Version =  '2.4.0.RELEASE' // '2.3.3.RELEASE' // '2.4.1.RELEASE'
 
         appVersion = "0.1."
         buildNumber = (System.getenv("BUILD_NUMBER")?.toString()?.toInteger() ?: 1)

@@ -2,11 +2,8 @@ package com.assd.oauthservice.config;
 
 import com.assd.oauthservice.token.AssdTokenEnhancer;
 import com.assd.oauthservice.token.AssdTokenService;
-import com.assd.oauthservice.token.JdbcTokenStores;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -23,8 +20,8 @@ import javax.sql.DataSource;
 
 /**
  * AuthorizationServerConfig.java
- * Date: 10 апр. 2019 г.
- * Users: amatveev
+ * Date: 6 may 2020 г.
+ * Users: av.eliseev
  * Description: Настройка конфигурации сервера авторизации токенов
  */
 @Configuration
@@ -56,7 +53,6 @@ public class AuthorizationServerConfig
     @Autowired
     private TokenStore tokenStore;
 
-//    @Autowired
     private DataSource dataSource;
 
     @Autowired
@@ -66,13 +62,6 @@ public class AuthorizationServerConfig
 
     @Bean
     public TokenStore tokenStore() {
-//        DataSource tokenDataSource = DataSourceBuilder.create()
-//                .driverClassName("org.postgresql.Driver")
-//                .username("postgres")
-//                .password("postgres")
-//                .url("jdbc:postgresql://10.5.121.117:5432/auth")
-//                .build();
-//        return new JdbcTokenStore(tokenDataSource);
         return new JdbcTokenStore(dataSource);
     }
 
@@ -118,14 +107,4 @@ public class AuthorizationServerConfig
         return new AssdTokenEnhancer();
     }
 
-//    @Bean
-//    public TokenStore tokenStore()
-//    {
-//        return new MongoTokenStore();
-//    }
-
-//    @Bean
-//    public TokenStore tokenStore() {
-//        return new JdbcTokenStore(dataSourceManager.getDataSource("users"));
-//    }
 }
