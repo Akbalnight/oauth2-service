@@ -1,7 +1,7 @@
 package com.assd.oauthservice.config;
 
 import com.assd.oauthservice.database.UsersDaoImpl;
-import com.assd.oauthservice.datasource.DataSourceManager;
+//import com.assd.oauthservice.datasource.DataSourceManager;
 import com.assd.oauthservice.ldap.AssdLdapUserDetailsContextMapper;
 import com.assd.oauthservice.userdetails.AssdDbUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ public class SecurityConfig
     private static final String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
 
     @Autowired
-    private DataSourceManager dataSourceManager;
+    private DataSource dataSource;
 
     @Autowired
     public void configAuthentication(AuthenticationManagerBuilder auth)
@@ -76,7 +76,8 @@ public class SecurityConfig
     public UserDetailsService assdDbUserDetailsService()
     {
         AssdDbUserDetailsService service = new AssdDbUserDetailsService();
-        service.setDataSource(jdbcDataSource());
+//        service.setDataSource(jdbcDataSource());
+        service.setDataSource(dataSource);
         service.setUsersByUsernameQuery(SQL_GET_USERS_BY_NAME);
         service.setAuthoritiesByUsernameQuery(SQL_AUTORITIES_BY_NAME);
         return service;
@@ -100,11 +101,11 @@ public class SecurityConfig
     /**
      * База данных пользователей
      */
-    @Bean
-    public DataSource jdbcDataSource()
-    {
-        return dataSourceManager.getDataSource(UsersDaoImpl.DB_NAME);
-    }
+//    @Bean
+//    public DataSource jdbcDataSource()
+//    {
+//        return dataSource;
+//    }
 
     @Override
     @Bean

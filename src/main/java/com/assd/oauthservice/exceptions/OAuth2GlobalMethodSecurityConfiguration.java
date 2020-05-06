@@ -1,5 +1,7 @@
 package com.assd.oauthservice.exceptions;
 
+import com.sun.org.apache.xerces.internal.parsers.SecurityConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;

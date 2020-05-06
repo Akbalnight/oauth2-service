@@ -9,7 +9,6 @@ import com.assd.oauthservice.storage.AccessChecker;
 import com.assd.oauthservice.dto.UserDTO;
 import com.assd.oauthservice.exceptions.ServiceException;
 import com.assd.oauthservice.exceptions.UserNotFoundException;
-import com.assd.oauthservice.mongo.MongoTokenStore;
 import com.assd.oauthservice.userdetails.AssdUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +17,7 @@ import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
 import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,8 +31,6 @@ public class AuthService
 {
     @Autowired
     private AccessChecker accessChecker;
-    @Autowired
-    private MongoTokenStore tokenStore;
     @Autowired
     private DefaultTokenServices tokenServices;
     @Autowired
@@ -80,8 +78,9 @@ public class AuthService
     public List<UserDTO> getActiveUsers(OAuth2Authentication authentication)
             throws ServiceException
     {
-        return tokenStore.getActiveUsers(authentication.getOAuth2Request()
-                                                       .getClientId());
+        return null;
+//        return tokenStore.getActiveUsers(authentication.getOAuth2Request()
+//                                                       .getClientId());
     }
 
     /**
@@ -99,7 +98,7 @@ public class AuthService
             throw new BadRequestException(resources.getResource(ResourceManager.USER_NAME_NOT_SPECIFIED));
         }
 
-        OAuth2AccessToken token = tokenStore.getTokenForUser(clientId, username, userId);
+        OAuth2AccessToken token = null; //tokenStore.getTokenForUser(clientId, username, userId);
         if (token == null)
         {
             throw new UserNotFoundException(resources.getResource(ResourceManager.USER_NOT_FOUND, username));

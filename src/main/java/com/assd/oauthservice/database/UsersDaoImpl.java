@@ -1,6 +1,6 @@
 package com.assd.oauthservice.database;
 
-import com.assd.oauthservice.datasource.DataSourceManager;
+//import com.assd.oauthservice.datasource.DataSourceManager;
 import com.assd.oauthservice.exceptions.UserNotFoundException;
 import com.assd.oauthservice.logger.Logger;
 import com.assd.oauthservice.resourcemanager.ResourceManager;
@@ -51,7 +51,9 @@ public class UsersDaoImpl implements UsersDao
     private static final String SQL_SELECT_NOT_LDAP_USER_ROLES = "SELECT role FROM user_roles LEFT JOIN roles ON user_roles.role = roles.name " +
             "WHERE user_roles.username = :username AND (roles.json_data->>'ldap')::boolean = false";
 
-    private final NamedParameterJdbcTemplate jdbcTemplate;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
+
     @Autowired
     private Logger logger;
     @Autowired
@@ -59,11 +61,11 @@ public class UsersDaoImpl implements UsersDao
     @Autowired
     private ObjectMapper jsonMapper;
 
-    @Autowired
-    public UsersDaoImpl(DataSourceManager dataSourceManager)
-    {
-        jdbcTemplate = new NamedParameterJdbcTemplate(dataSourceManager.getDataSource(DB_NAME));
-    }
+//    @Autowired
+//    public UsersDaoImpl(DataSourceManager dataSourceManager)
+//    {
+//        jdbcTemplate = new NamedParameterJdbcTemplate(dataSourceManager.getDataSource(DB_NAME));
+//    }
 
     @Override
     public List<Permission> getUserPermissions(String login)

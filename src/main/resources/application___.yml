@@ -3,9 +3,9 @@ spring:
 databases:
   db_users:
     driver: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/auth
+    url: jdbc:postgresql://10.5.121.117:5432/auth
     username: postgres
-    password: jsadmin7
+    password: postgres
   db_oauth2_mongo:
     url: 127.0.0.1:27017
     username: admin

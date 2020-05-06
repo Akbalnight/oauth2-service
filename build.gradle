@@ -1,6 +1,7 @@
 buildscript {
     ext {
-        springBootVersion = '2.0.5.RELEASE'
+        springBootVersion = '2.0.5.RELEASE' // '2.2.6.RELEASE'
+        springOauth2Version =  '2.3.3.RELEASE' // '2.4.1.RELEASE'
 
         appVersion = "0.1."
         buildNumber = (System.getenv("BUILD_NUMBER")?.toString()?.toInteger() ?: 1)
@@ -52,12 +53,12 @@ dependencies {
     springBoot { buildInfo() }
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     implementation('org.springframework.boot:spring-boot-starter-security')
-    implementation('org.springframework.security.oauth:spring-security-oauth2:2.3.3.RELEASE')
+    implementation("org.springframework.security.oauth:spring-security-oauth2:${springOauth2Version}")
     implementation('org.springframework.boot:spring-boot-starter-web')
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('org.springframework.security:spring-security-test')
     runtime('org.postgresql:postgresql:42.2.6')
     implementation("org.projectlombok:lombok:1.18.4")
     compile("org.springframework.security:spring-security-ldap:3.2.4.RELEASE")
-    implementation('org.springframework.boot:spring-boot-starter-data-mongodb:2.1.7.RELEASE')
+//    implementation('org.springframework.boot:spring-boot-starter-data-mongodb:2.1.7.RELEASE')
 }

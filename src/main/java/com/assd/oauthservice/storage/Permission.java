@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.http.HttpMethod;
 
+import java.io.Serializable;
+
 /**
  * Permission.java
  * Date: 10 апр. 2019 г.
@@ -16,7 +18,7 @@ import org.springframework.http.HttpMethod;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Permission
+public class Permission implements Serializable
 {
     /**
      * Метод
@@ -26,4 +28,10 @@ public class Permission
      * Путь запроса
      */
     private String path;
+
+
+    @Override
+    public String toString() {
+        return method.name() + " --- " + path;
+    }
 }

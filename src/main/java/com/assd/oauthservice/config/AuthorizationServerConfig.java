@@ -1,10 +1,12 @@
 package com.assd.oauthservice.config;
 
-import com.assd.oauthservice.mongo.MongoTokenStore;
 import com.assd.oauthservice.token.AssdTokenEnhancer;
 import com.assd.oauthservice.token.AssdTokenService;
+import com.assd.oauthservice.token.JdbcTokenStores;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -15,6 +17,9 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+
+import javax.sql.DataSource;
 
 /**
  * AuthorizationServerConfig.java
@@ -51,6 +56,26 @@ public class AuthorizationServerConfig
     @Autowired
     private TokenStore tokenStore;
 
+//    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    public AuthorizationServerConfig(DataSource dataSource){
+        this.dataSource = dataSource;
+    }
+
+    @Bean
+    public TokenStore tokenStore() {
+//        DataSource tokenDataSource = DataSourceBuilder.create()
+//                .driverClassName("org.postgresql.Driver")
+//                .username("postgres")
+//                .password("postgres")
+//                .url("jdbc:postgresql://10.5.121.117:5432/auth")
+//                .build();
+//        return new JdbcTokenStore(tokenDataSource);
+        return new JdbcTokenStore(dataSource);
+    }
+
     @Override
     public void configure(ClientDetailsServiceConfigurer clients)
             throws Exception
@@ -69,10 +94,11 @@ public class AuthorizationServerConfig
     {
         AssdTokenService tokenServices = tokenServices();
         tokenServices.setClientDetailsService(endpoints.getClientDetailsService());
-        endpoints.tokenStore(tokenStore)
-                 .tokenServices(tokenServices)
-                 .tokenEnhancer(tokenEnhancer())
-                 .authenticationManager(authenticationManager);
+        endpoints
+                .authenticationManager(authenticationManager)
+                .tokenStore(tokenStore)
+                .tokenServices(tokenServices)
+                .tokenEnhancer(tokenEnhancer());
     }
 
     @Bean
@@ -92,9 +118,14 @@ public class AuthorizationServerConfig
         return new AssdTokenEnhancer();
     }
 
-    @Bean
-    public TokenStore tokenStore()
-    {
-        return new MongoTokenStore();
-    }
+//    @Bean
+//    public TokenStore tokenStore()
+//    {
+//        return new MongoTokenStore();
+//    }
+
+//    @Bean
+//    public TokenStore tokenStore() {
+//        return new JdbcTokenStore(dataSourceManager.getDataSource("users"));
+//    }
 }
