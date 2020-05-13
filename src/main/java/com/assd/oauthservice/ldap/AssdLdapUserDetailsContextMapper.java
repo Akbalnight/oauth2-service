@@ -55,6 +55,8 @@ public class AssdLdapUserDetailsContextMapper
         {
             // После аутентификации через LDAP добавим пользователя в БД
             userId = usersDao.addUserFromLdap(username, userInfo);
+//            userId = usersDao.addUserFromLdap(username, null);
+
         }
         // Перезапишем роли пользователя, полученные из LDAP групп в БД
         usersDao.updateUserRoles(username, roles.stream()

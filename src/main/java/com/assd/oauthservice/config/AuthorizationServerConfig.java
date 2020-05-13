@@ -1,5 +1,7 @@
 package com.assd.oauthservice.config;
 
+import com.assd.oauthservice.config.pkce.PkceAuthorizationCodeServices;
+import com.assd.oauthservice.config.pkce.PkceAuthorizationCodeTokenGranter;
 import com.assd.oauthservice.token.AssdTokenEnhancer;
 import com.assd.oauthservice.token.AssdTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,15 +10,31 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.ClientDetailsService;
+import org.springframework.security.oauth2.provider.CompositeTokenGranter;
+import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
+import org.springframework.security.oauth2.provider.TokenGranter;
+import org.springframework.security.oauth2.provider.client.ClientCredentialsTokenGranter;
+import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices;
+import org.springframework.security.oauth2.provider.implicit.ImplicitTokenGranter;
+import org.springframework.security.oauth2.provider.password.ResourceOwnerPasswordTokenGranter;
+import org.springframework.security.oauth2.provider.refresh.RefreshTokenGranter;
+import org.springframework.security.oauth2.provider.token.AuthorizationServerTokenServices;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * AuthorizationServerConfig.java
@@ -29,23 +47,28 @@ import javax.sql.DataSource;
 public class AuthorizationServerConfig
         extends AuthorizationServerConfigurerAdapter
 {
+    private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
     private static final String GRANT_TYPE_PASSWORD = "password";
     private static final String REFRESH_TOKEN = "refresh_token";
     private static final String SCOPE_READ = "read";
     private static final String SCOPE_WRITE = "write";
     private static final String TRUST = "trust";
+    private static final String RESOURCE_ID = "resource_id";
 
     /**
      * Продолжительность жизни токена в секундах
      */
-    @Value("${token.expired.seconds:3600}")
-    private int tokenExpiredSeconds;
+    @Value("${auth.access_token.expired.seconds}")
+    private int accessTokenExpiredSeconds;
 
     /**
      * Продолжительность жизни refresh токена в секундах
      */
-    @Value("${refreshtoken.expired.seconds:32400}")
+    @Value("${auth.refresh_token.expired.seconds}")
     private int refreshTokenExpiredSeconds;
+
+    @Value("${auth.redirectUrl}")
+    private String redirectUrl;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -54,6 +77,10 @@ public class AuthorizationServerConfig
     private TokenStore tokenStore;
 
     private DataSource dataSource;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @Autowired
     public AuthorizationServerConfig(DataSource dataSource){
@@ -65,17 +92,34 @@ public class AuthorizationServerConfig
         return new JdbcTokenStore(dataSource);
     }
 
+    @Bean
+    public SecurityContextHolderAwareRequestFilter securityContextHolderAwareRequestFilter() {
+        return new SecurityContextHolderAwareRequestFilter();
+    }
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) {
+        security.allowFormAuthenticationForClients();
+    }
+
     @Override
     public void configure(ClientDetailsServiceConfigurer clients)
             throws Exception
     {
         clients.inMemory()
-               .withClient(ClientData.CLIENT_ID)
-               .secret(ClientData.CLIENT_SECRET)
-               .authorizedGrantTypes(GRANT_TYPE_PASSWORD, REFRESH_TOKEN)
-               .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
-               .accessTokenValiditySeconds(tokenExpiredSeconds)
-               .refreshTokenValiditySeconds(refreshTokenExpiredSeconds);
+                .withClient(ClientData.CLIENT_ID)
+                .secret(passwordEncoder.encode(ClientData.CLIENT_SECRET))
+                .redirectUris(redirectUrl)
+                .authorizedGrantTypes(GRANT_TYPE_AUTHORIZATION_CODE, REFRESH_TOKEN)
+                .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
+                .autoApprove(true)
+//                    .and()
+//                    .withClient(ClientData.CLIENT_ID)
+//                    .secret(passwordEncoder.encode(ClientData.CLIENT_SECRET))
+//                    .authorizedGrantTypes(GRANT_TYPE_PASSWORD)
+//                    .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
+                .accessTokenValiditySeconds(accessTokenExpiredSeconds)
+                .refreshTokenValiditySeconds(refreshTokenExpiredSeconds);
     }
 
     @Override
@@ -84,10 +128,12 @@ public class AuthorizationServerConfig
         AssdTokenService tokenServices = tokenServices();
         tokenServices.setClientDetailsService(endpoints.getClientDetailsService());
         endpoints
-                .authenticationManager(authenticationManager)
-                .tokenStore(tokenStore)
                 .tokenServices(tokenServices)
-                .tokenEnhancer(tokenEnhancer());
+                .tokenStore(tokenStore)
+                .tokenEnhancer(tokenEnhancer())
+                .authenticationManager(authenticationManager)
+                .authorizationCodeServices(new PkceAuthorizationCodeServices(endpoints.getClientDetailsService(), passwordEncoder))
+                .tokenGranter(tokenGranter(endpoints));
     }
 
     @Bean
@@ -107,4 +153,22 @@ public class AuthorizationServerConfig
         return new AssdTokenEnhancer();
     }
 
+    private TokenGranter tokenGranter(final AuthorizationServerEndpointsConfigurer endpoints) {
+//        List<TokenGranter> granters = new ArrayList<>(Collections.singletonList(endpoints.getTokenGranter()));
+        List<TokenGranter> granters = new ArrayList<>();
+
+
+        AuthorizationServerTokenServices tokenServices = endpoints.getTokenServices();
+        AuthorizationCodeServices authorizationCodeServices = endpoints.getAuthorizationCodeServices();
+        ClientDetailsService clientDetailsService = endpoints.getClientDetailsService();
+        OAuth2RequestFactory requestFactory = endpoints.getOAuth2RequestFactory();
+
+        granters.add(new RefreshTokenGranter(tokenServices, clientDetailsService, requestFactory));
+        granters.add(new ImplicitTokenGranter(tokenServices, clientDetailsService, requestFactory));
+        granters.add(new ClientCredentialsTokenGranter(tokenServices, clientDetailsService, requestFactory));
+        granters.add(new ResourceOwnerPasswordTokenGranter(authenticationManager, tokenServices, clientDetailsService, requestFactory));
+        granters.add(new PkceAuthorizationCodeTokenGranter(tokenServices, ((PkceAuthorizationCodeServices) authorizationCodeServices), clientDetailsService, requestFactory));
+
+        return new CompositeTokenGranter(granters);
+    }
 }

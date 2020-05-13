@@ -200,14 +200,14 @@ public class UsersDaoImpl implements UsersDao
         }
 
         String json = null;
-        try
-        {
-            json = jsonMapper.writeValueAsString(userInfo);
-        }
-        catch (JsonProcessingException e)
-        {
-            logger.error(e);
-        }
+//        try
+//        {
+//            json = jsonMapper.writeValueAsString(userInfo);
+//        }
+//        catch (JsonProcessingException e)
+//        {
+//            logger.error(e);
+//        }
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("username", username);
         params.addValue("password", new BCryptPasswordEncoder().encode(""));

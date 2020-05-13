@@ -13,6 +13,7 @@ import com.assd.oauthservice.userdetails.AssdUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationDetails;
@@ -37,15 +38,29 @@ public class AuthService
 
     /**
      * Проверка доступа пользователя к запросу
+     * @param token     Token пользователя в заголовке запроса
+     * @param queryData Данные запроса
+     * @return Возвращает информацию {@code UserResponseObject} о пользователе если у него есть доступ к запросу
+     * @throws ServiceException Исключение если у пользователя нет доступа к запросу
+     */
+    public ResponseEntity<?> checkAccess(String token, QueryData queryData) throws ServiceException
+    {
+        Authentication authentication = tokenServices.loadAuthentication(token);
+        return checkAccess(authentication, queryData);
+    }
+
+    /**
+     * Проверка доступа пользователя к запросу
      * @param authentication Данные аутентификации пользователя
      * @param queryData      Данные запроса
      * @return Возвращает информацию {@code UserResponseObject} о пользователе если у него есть доступ к запросу
      * @throws ServiceException Исключение если у пользователя нет доступа к запросу
      */
-    public ResponseEntity<?> checkAccess(OAuth2Authentication authentication, QueryData queryData)
+    public ResponseEntity<?> checkAccess(Authentication authentication, QueryData queryData)
             throws ServiceException
     {
         AssdUserDetails userData = findUserData(authentication);
+
         if (accessChecker.isHaveAccess(userData.getPermissions(), queryData))
         {
             return new ResponseEntity<>(UserResponseObject.builder()
@@ -74,7 +89,7 @@ public class AuthService
      * @return Возвращает список активных пользователей
      * @throws ServiceException Исключение если у текущего пользователя нет доступа к методу
      */
-    public List<UserDTO> getActiveUsers(OAuth2Authentication authentication)
+    public List<UserDTO> getActiveUsers(Authentication authentication)
             throws ServiceException
     {
         return null;
@@ -111,7 +126,7 @@ public class AuthService
      * @param query          Данные запроса
      * @throws ServiceException Исключение если у пользователя нет доступа к запросу
      */
-    public void verifyAccess(OAuth2Authentication authentication, QueryData query)
+    public void verifyAccess(Authentication authentication, QueryData query)
             throws ServiceException
     {
         AssdUserDetails currentUser = findUserData(authentication);
@@ -128,7 +143,7 @@ public class AuthService
      * @return Возвращает данные пользователя
      * @throws UserNotFoundException Исключение при ошибке получения данных аутентификации пользователя
      */
-    private AssdUserDetails findUserData(OAuth2Authentication authentication)
+    private AssdUserDetails findUserData(Authentication authentication)
             throws UserNotFoundException
     {
         if (authentication.getPrincipal() instanceof AssdUserDetails)

@@ -1,27 +1,35 @@
 package com.assd.oauthservice.config;
 
-import com.assd.oauthservice.database.UsersDaoImpl;
-//import com.assd.oauthservice.datasource.DataSourceManager;
 import com.assd.oauthservice.ldap.AssdLdapUserDetailsContextMapper;
 import com.assd.oauthservice.userdetails.AssdDbUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
+import org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler;
+import org.springframework.security.web.access.ExceptionTranslationFilter;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 import javax.sql.DataSource;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 /**
  * SecurityConfig.java
@@ -31,7 +39,7 @@ import javax.sql.DataSource;
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+//@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig
         extends WebSecurityConfigurerAdapter
 {
@@ -55,6 +63,32 @@ public class SecurityConfig
         {
             auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
         }
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception
+    {
+        http
+                .requestMatchers()
+                .antMatchers("/login", "/oauth/authorize")
+//            .authorizeRequests()
+//                .antMatchers(
+//                        "/login",
+//                        "/bootstrap-4.3.1/**",
+//                        "/css/**",
+//                        "/img/**",
+//                        "/oauth/authorize").permitAll()
+            .and()
+                .authorizeRequests().anyRequest().authenticated()
+            .and()
+                .csrf().disable()
+//            .and()
+                .formLogin()
+                .loginPage("/login")
+                .permitAll()
+            .and()
+                .exceptionHandling()
+                .accessDeniedHandler(new OAuth2AccessDeniedHandler());
     }
 
     /**
