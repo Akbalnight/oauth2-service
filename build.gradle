@@ -2,10 +2,15 @@ buildscript {
     ext {
         springBootVersion = '2.2.6.RELEASE' // '2.0.5.RELEASE' // '2.2.6.RELEASE'
         springOauth2Version =  '2.4.0.RELEASE' // '2.3.3.RELEASE' // '2.4.1.RELEASE'
+        springCloudVersion = "2.2.2.RELEASE"
+        springRetryVersion = "1.2.5.RELEASE"
+        springLdapVersion = '3.2.10.RELEASE' // last - '5.3.2.RELEASE'
+        springJWTVersion = '1.1.0.RELEASE'
+        log4j2version = '2.13.1'
 
         appVersion = "0.1."
         buildNumber = (System.getenv("BUILD_NUMBER")?.toString()?.toInteger() ?: 1)
-      	appName = 'oauth2_service.jar'
+      	appName = 'oauth.jar'
     }
     repositories {
         maven { url "https://plugins.gradle.org/m2/" }
@@ -49,19 +54,44 @@ configure(bootJarCustom) {
     description = 'Assembles bootJar task and copy jar to build directory of root project'
 }
 
+configurations.all {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    exclude group: "org.springframework.cloud", module: "spring-cloud-bus"
+    exclude group: "ch.qos.logback", module: "logback-classic"
+}
+
 dependencies {
     springBoot { buildInfo() }
+    implementation("org.projectlombok:lombok:1.18.12")
+
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     implementation('org.springframework.boot:spring-boot-starter-security')
-    implementation("org.springframework.security.oauth:spring-security-oauth2:${springOauth2Version}")
     implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+
+    implementation("org.springframework.security.oauth:spring-security-oauth2:${springOauth2Version}")
+    implementation("org.springframework.security:spring-security-ldap:${springLdapVersion}")
+    implementation "org.springframework.security:spring-security-jwt:${springJWTVersion}"
+
+    // Для конфиг сервера
+    implementation("org.springframework.cloud:spring-cloud-starter-config:${springCloudVersion}")
+
+    // Для логов по ссылке
+    implementation("org.apache.logging.log4j:log4j-spring-cloud-config-client:${log4j2version}")
+    implementation("org.apache.logging.log4j:log4j-api:${log4j2version}")
+    implementation("org.apache.logging.log4j:log4j-core:${log4j2version}")
+
+    // Для поиска сервера
+    implementation("org.springframework.retry:spring-retry:${springRetryVersion}")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
+    // Для централизованного логирования
+    compile("org.springframework.boot:spring-boot-starter-activemq")
+    compile("org.springframework.boot:spring-boot-starter-log4j2")
+
+    runtime('org.postgresql:postgresql:42.2.12')
+
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('org.springframework.security:spring-security-test')
-    runtime('org.postgresql:postgresql:42.2.6')
-    implementation("org.projectlombok:lombok:1.18.4")
-    compile("org.springframework.security:spring-security-ldap:3.2.4.RELEASE")
-    compile "org.springframework.security:spring-security-jwt:1.1.0.RELEASE"
-    compile("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
-    compile("org.springframework.boot:spring-boot-starter-thymeleaf:${springBootVersion}")
-//    implementation('org.springframework.boot:spring-boot-starter-data-mongodb:2.1.7.RELEASE')
 }

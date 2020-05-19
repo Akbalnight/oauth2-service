@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 
 import java.util.HashMap;
@@ -15,7 +16,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * @author AsMatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Добавление в токен информации о пользователе перед сохранением токена в {@code TokenStore}
  */
 public class AssdTokenEnhancer
@@ -33,7 +35,7 @@ public class AssdTokenEnhancer
         final Map<String, Object> additionalInfo = new HashMap<>();
         if (authentication.getPrincipal() instanceof AssdUserDetails)
         {
-            additionalInfo.putAll(getUserInfo((AssdUserDetails) authentication.getPrincipal()));
+            additionalInfo.putAll(getUserInfo(authentication));
             if (authentication.getPrincipal() instanceof AssdLdapUserDetails)
             {
                 // Для LDAP пользователей сохраняются данные из LDAP
@@ -61,10 +63,12 @@ public class AssdTokenEnhancer
 
     /**
      * Формирует список пермиссиий, логин, id и список ролей пользователя
-     * @param userDetails Данные пользователя
+     * @param authentication Данные пользователя
      */
-    private Map<String, Object> getUserInfo(AssdUserDetails userDetails)
+    private Map<String, Object> getUserInfo(OAuth2Authentication authentication)
     {
+        AssdUserDetails userDetails = (AssdUserDetails) authentication.getPrincipal();
+
         Map<String, Object> info = new HashMap<>();
         info.put(AdditionalInformationConst.USER_NAME, userDetails.getName());
         info.put(AdditionalInformationConst.ROLES, userDetails.getRoles()
@@ -74,6 +78,11 @@ public class AssdTokenEnhancer
         {
             info.put(AdditionalInformationConst.USER_ID, userDetails.getUserId());
         }
+
+        OAuth2Request oAuth2Request = authentication.getOAuth2Request();
+
+        Map<String, String> requestParameters =  oAuth2Request.getRequestParameters();
+        info.put("code_challenge", requestParameters.get("code_challenge"));
         return info;
     }
 }

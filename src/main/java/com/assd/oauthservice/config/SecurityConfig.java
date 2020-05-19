@@ -6,35 +6,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 import org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler;
-import org.springframework.security.web.access.ExceptionTranslationFilter;
-import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 import javax.sql.DataSource;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 /**
  * SecurityConfig.java
- * Date: 10 апр. 2019 г.
- * Users: amatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Настройки конфигурации аутентификации/авторизации пользователей
  */
 @Configuration
@@ -43,11 +34,11 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig
         extends WebSecurityConfigurerAdapter
 {
-    @Value("${auth.ldap.url:}")
+    @Value("${spring.ldap.urls}")
     private String ldapUrl;
 
-    @Value("${auth.ldap.domen:}")
-    private String ldapDomen;
+    @Value("${spring.ldap.domain}")
+    private String ldapDomain;
 
     private static final String SQL_GET_USERS_BY_NAME = "select username,password, enabled from users where username=LOWER(?)";
     private static final String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
@@ -59,7 +50,7 @@ public class SecurityConfig
     public void configAuthentication(AuthenticationManagerBuilder auth)
     {
         auth.authenticationProvider(daoAuthenticationProvider());
-        if (!ldapUrl.isEmpty() && !ldapDomen.isEmpty())
+        if (!ldapUrl.isEmpty() && !ldapDomain.isEmpty())
         {
             auth.authenticationProvider(activeDirectoryLdapAuthenticationProvider());
         }
@@ -70,7 +61,7 @@ public class SecurityConfig
     {
         http
                 .requestMatchers()
-                .antMatchers("/login", "/oauth/authorize")
+                .antMatchers("/oauth/login", "/oauth/logout", "/oauth/authorize")
 //            .authorizeRequests()
 //                .antMatchers(
 //                        "/login",
@@ -84,11 +75,20 @@ public class SecurityConfig
                 .csrf().disable()
 //            .and()
                 .formLogin()
-                .loginPage("/login")
+                .loginPage("/oauth/login")
+                .defaultSuccessUrl("/oauth/home")
+                .permitAll()
+            .and()
+                .logout()
+                .logoutUrl("/oauth/logout")
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             .and()
                 .exceptionHandling()
                 .accessDeniedHandler(new OAuth2AccessDeniedHandler());
+
+        // Необходимо для получения списка активных сессий
+//        http.sessionManagement().sess
     }
 
     /**
@@ -124,7 +124,7 @@ public class SecurityConfig
     @Bean
     public AuthenticationProvider activeDirectoryLdapAuthenticationProvider()
     {
-        ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider(ldapDomen,
+        ActiveDirectoryLdapAuthenticationProvider provider = new ActiveDirectoryLdapAuthenticationProvider(ldapDomain,
                 ldapUrl);
         provider.setConvertSubErrorCodesToExceptions(true);
         provider.setUseAuthenticationRequestCredentials(true);
@@ -162,6 +162,6 @@ public class SecurityConfig
     @Bean
     public UserDetailsContextMapper userDetailsContextMapper()
     {
-        return new AssdLdapUserDetailsContextMapper(ldapDomen);
+        return new AssdLdapUserDetailsContextMapper(ldapDomain);
     }
 }

@@ -6,8 +6,8 @@ import lombok.Setter;
 
 /**
  * ExceptionResponseObject.java
- * Date: 10 апр. 2019 г.
- * @author AsMatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Класс для передачи данных исключении
  */
 @Getter
@@ -19,6 +19,11 @@ public class ExceptionResponseObject
      * Http статус ошибки
      */
     private Integer status;
+
+    /**
+     * Код ошибки
+     */
+    private String error;
 
     /**
      * Описание ошибки

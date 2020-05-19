@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 
 /**
- * @author AsMatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Переопределяет {@code DefaultTokenServices}
  */
 public class AssdTokenService
@@ -26,44 +27,44 @@ public class AssdTokenService
 
     @Autowired
     private Logger logger;
-    /**
-     * Обновляет время жизни accessToken при каждом запросе аутентификации
-     */
-    @Override
-    @Transactional
-    public OAuth2AccessToken createAccessToken(OAuth2Authentication authentication)
-            throws AuthenticationException
-    {
-        try
-        {
-            OAuth2AccessToken existingAccessToken = tokenStore.getAccessToken(authentication);
-            if (existingAccessToken != null)
-            {
-                if (!existingAccessToken.isExpired())
-                {
-                    DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) existingAccessToken;
-                    int validitySeconds = getAccessTokenValiditySeconds(authentication.getOAuth2Request());
-                    if (validitySeconds > 0)
-                    {
-                        Date date = new Date(System.currentTimeMillis() + (validitySeconds * 1000L));
-                        DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) token.getRefreshToken();
-                        if (date.after(refreshToken.getExpiration()))
-                        {
-                            // Если refreshToken истекает раньше date, установим его дату
-                            date = refreshToken.getExpiration();
-                        }
-                        token.setExpiration(date);
-                        tokenStore.storeAccessToken(existingAccessToken, authentication);
-                    }
-                    return existingAccessToken;
-                }
-            }
-            return super.createAccessToken(authentication);
-        }
-        catch (ConversionFailedException ex)
-        {
-            logger.error("Ошибка при создании токена", ex);
-            throw ex;
-        }
-    }
+//    /**
+//     * Обновляет время жизни accessToken при каждом запросе аутентификации
+//     */
+//    @Override
+//    @Transactional
+//    public OAuth2AccessToken createAccessToken(OAuth2Authentication authentication)
+//            throws AuthenticationException
+//    {
+//        try
+//        {
+//            OAuth2AccessToken existingAccessToken = tokenStore.getAccessToken(authentication);
+//            if (existingAccessToken != null)
+//            {
+//                if (!existingAccessToken.isExpired())
+//                {
+//                    DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) existingAccessToken;
+//                    int validitySeconds = getAccessTokenValiditySeconds(authentication.getOAuth2Request());
+//                    if (validitySeconds > 0)
+//                    {
+//                        Date date = new Date(System.currentTimeMillis() + (validitySeconds * 1000L));
+//                        DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) token.getRefreshToken();
+//                        if (date.after(refreshToken.getExpiration()))
+//                        {
+//                            // Если refreshToken истекает раньше date, установим его дату
+//                            date = refreshToken.getExpiration();
+//                        }
+//                        token.setExpiration(date);
+//                        tokenStore.storeAccessToken(existingAccessToken, authentication);
+//                    }
+//                    return existingAccessToken;
+//                }
+//            }
+//            return super.createAccessToken(authentication);
+//        }
+//        catch (ConversionFailedException ex)
+//        {
+//            logger.error("Ошибка при создании токена", ex);
+//            throw ex;
+//        }
+//    }
 }

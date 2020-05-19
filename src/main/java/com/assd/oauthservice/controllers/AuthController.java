@@ -18,16 +18,24 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
 
 /**
  * AuthController.java
- * Date: 10 апр. 2019 г.
- * Users: amatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Основной контроллер сервиса
  */
 @Controller
@@ -36,62 +44,78 @@ class AuthController
     @Autowired
     private AuthService service;
 
-    @GetMapping("/login")
+    @GetMapping("/oauth/login")
     public String login() {
         return "/login";
     }
 
+    @GetMapping("/oauth/home")
+    public String home() {
+        return "/home";
+    }
+
+    /**
+     * Проверка токена и уникальности клиента
+     * @param token          Данные аутентификации пользователя
+     * @return Возвращает 200 или исключение 400 / 401
+     * @throws ServiceException Исключение если у пользователя проблемы с токеном или клиентом
+     */
+    @PostMapping(value = "/oauth/checkToken")
+    public ResponseEntity<?> checkToken(
+            HttpServletRequest httpRequest,
+            @RequestParam("token") String token)
+            throws ServiceException, UnsupportedEncodingException {
+        String code_challenge = getCodeChallenge(httpRequest);
+        if(token != null && code_challenge != null){
+            String decode_code = URLDecoder.decode(code_challenge, StandardCharsets.UTF_8.toString());
+            return service.checkToken(token, decode_code);
+        } else {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
     /**
      * Проверка доступа пользователя к запросу
-     * @param authentication Данные аутентификации пользователя
+     * @param token Данные аутентификации пользователя
      * @param queryData Данные запроса
      * @return Возвращает информацию {@code UserResponseObject} о пользователе если у него есть доступ к запросу
      * @throws ServiceException Исключение если у пользователя нет доступа к запросу
      */
     @PostMapping(value = "/oauth/checkAccess")
     public ResponseEntity<?> checkAccess(
-            OAuth2Authentication authentication,
-//            Principal principal,
-//            HttpSession session,
-//            @AuthenticationPrincipal AssdUserDetails userDetails,
-            @RequestHeader (name="Authorization") String authorization,
+            @RequestParam("token") String token,
+            @RequestParam("code_challenge") String code_challenge,
             @RequestBody QueryData queryData)
-            throws ServiceException
-    {
-        if(authorization != null){
-            String[] token = authorization.split(" ");
-            return service.checkAccess(token[1], queryData);
-//            return service.checkAccess(authentication, queryData);
+            throws ServiceException, UnsupportedEncodingException {
+        if(token != null && code_challenge != null){
+            String decode_code = URLDecoder.decode(code_challenge, StandardCharsets.UTF_8.toString());
+            return service.checkAccess(token, decode_code, queryData);
         } else {
             return ResponseEntity.status(401).build();
         }
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        OAuth2Authentication oAuth2Authentication = (OAuth2Authentication) SecurityContextHolder.getContext() .getAuthentication();
-//        Authentication userAuthentication = oAuth2Authentication.getUserAuthentication();
-//        return service.checkAccess(authentication, queryData);
-
-//        SecurityContext context = (SecurityContext)session.getAttribute("SPRING_SECURITY_CONTEXT");
-//        String  login = ((org.springframework.security.core.userdetails.User) context.getAuthentication().getPrincipal()).getUsername(); // = "user"
-//        return ResponseEntity.ok(context.getAuthentication().getPrincipal());
     }
-
-//    @PostMapping(value = "/checkAccess")
-//    public String checkAccess(HttpServletRequest request, @RequestBody QueryData queryData)
-//            throws ServiceException
-//    {
-//        Principal principal = request.getUserPrincipal();
-//        return principal.getName();
-//    }
 
     /**
      * Удаляет токены текущего пользователя
-     * @param authentication Данные аутентификации пользователя
+     * @param token
+     * @return
+     * @throws UnsupportedEncodingException
      */
     @GetMapping("/oauth/revokeToken")
     @ResponseStatus(code = HttpStatus.OK)
-    public void logout(OAuth2Authentication authentication)
+//    public void logout(OAuth2Authentication authentication)
+    public ResponseEntity<?> logout(
+            HttpServletRequest httpRequest,
+            @RequestParam("token") String token
+    ) throws UnsupportedEncodingException
     {
-        service.logout(authentication);
+        String code_challenge = getCodeChallenge(httpRequest);
+        if(token != null && code_challenge != null){
+            String decode_code = URLDecoder.decode(code_challenge, StandardCharsets.UTF_8.toString());
+            return service.logout(token, decode_code);
+        } else {
+            return ResponseEntity.status(401).build();
+        }
     }
 
     /**
@@ -124,5 +148,20 @@ class AuthController
                                             .path("/oauth/activeUsers")
                                             .build());
         return service.getActiveUsers(authentication);
+    }
+
+    /**
+     * Формирует параметр дополнитльной проверки доступа
+     */
+    private String getCodeChallenge(HttpServletRequest httpRequest) {
+        if (httpRequest != null) {
+            Cookie[] cookies = httpRequest.getCookies();
+            for (int i = 0; i < cookies.length; i++) {
+                if (cookies[i].getName().equals("code_challenge")) {
+                    return cookies[i].getValue();
+                }
+            }
+        }
+        return null;
     }
 }

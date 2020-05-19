@@ -9,8 +9,8 @@ import java.util.List;
 
 /**
  * UserResponseObject.java
- * Date: 10 апр. 2019 г.
- * Users: amatveev
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Данные пользователя возвращаемые клиенту
  */
 @Getter
@@ -31,4 +31,6 @@ public class UserResponseObject
      * Список ролей пользователя
      */
     private List<String> roles;
+
+    private String code_challenge;
 }

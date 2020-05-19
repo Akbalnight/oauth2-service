@@ -7,21 +7,30 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 /**
+ * Date: 19 may 2020 г.
+ * Users: av.eliseev
  * Description: Класс для обертки и генерации исключений сервиса при выполнении запросов
- * @author AsMatveev
  */
 @Log4j2
 public class ServiceException
         extends RuntimeException
 {
     private final HttpStatus status;
+    private final String errorCode;
     private final String errorMessage;
 
     public ServiceException(HttpStatus httpStatus, String errorMessage)
     {
+        this(httpStatus, httpStatus.name(), errorMessage);
+    }
+
+    public ServiceException(HttpStatus httpStatus, String errorCode, String errorMessage)
+    {
         log.warn("ServiceException => status [{}]", httpStatus);
+        log.warn("ServiceException => errorCode [{}]", errorCode);
         log.warn("ServiceException => errorMessage [{}]", errorMessage);
         this.status = httpStatus;
+        this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
 
@@ -48,8 +57,9 @@ public class ServiceException
     private ExceptionResponseObject getErrorResponse()
     {
         return ExceptionResponseObject.builder()
-                                      .status(status.value())
-                                      .error_description(errorMessage)
-                                      .build();
+                .status(status.value())
+                .error(errorCode)
+                .error_description(errorMessage)
+                .build();
     }
 }
