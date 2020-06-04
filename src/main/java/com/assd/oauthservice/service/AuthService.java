@@ -11,6 +11,7 @@ import com.assd.oauthservice.exceptions.ServiceException;
 import com.assd.oauthservice.exceptions.UserNotFoundException;
 import com.assd.oauthservice.mongo.MongoTokenStore;
 import com.assd.oauthservice.userdetails.AssdUserDetails;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import java.util.List;
  * Description: Сервис для работы с пользователями
  * @author AsMatveev
  */
+@Log4j2
 @Service
 public class AuthService
 {
@@ -51,12 +53,14 @@ public class AuthService
         AssdUserDetails userData = findUserData(authentication);
         if (accessChecker.isHaveAccess(userData.getPermissions(), queryData))
         {
+            log.info("User [{}] have access to {} [{}]", userData.getName(), queryData.getMethod(), queryData.getPath());
             return new ResponseEntity<>(UserResponseObject.builder()
                                                           .username(userData.getName())
                                                           .id(userData.getUserId())
                                                           .roles(userData.getRoles())
                                                           .build(), HttpStatus.OK);
         }
+        log.info("User [{}] have not access to {} [{}]", userData.getName(), queryData.getMethod(), queryData.getPath());
         throw new ForbiddenQueryException(resources.getResource(ResourceManager.FORBIDDEN_QUERY, authentication.getName(),
                 queryData.getMethod(), queryData.getPath()));
     }
