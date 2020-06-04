@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.DefaultExpiringOAuth2RefreshToken;
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
@@ -32,8 +33,10 @@ import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Date: 19 may 2020 г.
@@ -62,6 +65,34 @@ public class AuthService
 
     @Autowired
     private ResourceManager resources;
+
+    private List<String> tokensForUpdate = new ArrayList<>();
+
+    @Scheduled(fixedRate = 15000)
+    private void updateTokens(){
+        log.info("Tokens For Update size [{}]", tokensForUpdate.size());
+        for(String value : tokensForUpdate) {
+            OAuth2AccessToken OAuth2Token = tokenServices.readAccessToken(value);
+            OAuth2Authentication authentication = tokenServices.loadAuthentication(OAuth2Token.getValue());
+
+            DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) OAuth2Token;
+            int validitySeconds = accessTokenExpiredSeconds;//OAuth2Token.getExpiresIn();
+            if (validitySeconds > 0) {
+                Date date = new Date(System.currentTimeMillis() + (validitySeconds * 1000L));
+                DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) token.getRefreshToken();
+                if (date.after(refreshToken.getExpiration())) {
+                    // Если refreshToken истекает раньше date, установим его дату
+                    date = refreshToken.getExpiration();
+                }
+                token.setExpiration(date);
+//                tokenStore.removeAccessToken(OAuth2Token);
+                tokenStore.storeAccessToken(OAuth2Token, authentication);
+                log.info("Token [{}] updated", value);
+            }
+        }
+        tokensForUpdate.clear();
+        log.info("Tokens For Update - cleared");
+    }
 
     /**
      * Проверка токена и уникальности клиента
@@ -119,20 +150,10 @@ public class AuthService
 
         if (accessChecker.isHaveAccess(userData.getPermissions(), queryData))
         {
-            DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) OAuth2Token;
-            int validitySeconds =  accessTokenExpiredSeconds;//OAuth2Token.getExpiresIn();
-            if (validitySeconds > 0)
-            {
-                Date date = new Date(System.currentTimeMillis() + (validitySeconds * 1000L));
-                DefaultExpiringOAuth2RefreshToken refreshToken = (DefaultExpiringOAuth2RefreshToken) token.getRefreshToken();
-                if (date.after(refreshToken.getExpiration()))
-                {
-                    // Если refreshToken истекает раньше date, установим его дату
-                    date = refreshToken.getExpiration();
-                }
-                token.setExpiration(date);
-                tokenStore.storeAccessToken(OAuth2Token, authentication);
-            }
+            log.info("User [{}] have access to {} [{}]", userData.getName(), queryData.getMethod(), queryData.getPath());
+
+            if(tokensForUpdate.stream().filter(value::equals).findAny().orElse(null) == null)
+                tokensForUpdate.add(value);
 
 //            log.info("validitySeconds           => [{}]", validitySeconds);
 //            log.info("OAuth2Token.getExpiration => [{}]", OAuth2Token.getExpiration());
@@ -145,6 +166,7 @@ public class AuthService
                     .code_challenge(OAuth2Token.getAdditionalInformation().get("code_challenge").toString())
                     .build(), HttpStatus.OK);
         }
+        log.info("User [{}] have not access to {} [{}]", userData.getName(), queryData.getMethod(), queryData.getPath());
         throw new ForbiddenQueryException(resources.getResource(ResourceManager.FORBIDDEN_QUERY, authentication.getName(),
                 queryData.getMethod(), queryData.getPath()));
     }

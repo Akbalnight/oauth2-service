@@ -4,6 +4,7 @@ import com.assd.oauthservice.config.pkce.PkceAuthorizationCodeServices;
 import com.assd.oauthservice.config.pkce.PkceAuthorizationCodeTokenGranter;
 import com.assd.oauthservice.token.AssdTokenEnhancer;
 import com.assd.oauthservice.token.AssdTokenService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +43,7 @@ import java.util.List;
  * Users: av.eliseev
  * Description: Настройка конфигурации сервера авторизации токенов
  */
+@Log4j2
 @Configuration
 @EnableAuthorizationServer
 public class AuthorizationServerConfig
@@ -67,8 +69,17 @@ public class AuthorizationServerConfig
     @Value("${auth.refresh_token.expired.seconds}")
     private int refreshTokenExpiredSeconds;
 
-    @Value("${auth.redirectUrl}")
-    private String redirectUrl;
+    /**
+     * Параметры пользователя для проверки токена
+     */
+    @Value("${auth.clientId}")
+    public String CLIENT_ID;
+
+    @Value("${auth.clientSecret}")
+    public String CLIENT_SECRET;
+
+    @Autowired
+    LoadProps loadProps;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -106,10 +117,11 @@ public class AuthorizationServerConfig
     public void configure(ClientDetailsServiceConfigurer clients)
             throws Exception
     {
+        log.info("redirectUris => {}", String.join(", ", loadProps.getRedirectUrls()));
         clients.inMemory()
-                .withClient(ClientData.CLIENT_ID)
-                .secret(passwordEncoder.encode(ClientData.CLIENT_SECRET))
-                .redirectUris(redirectUrl)
+                .withClient(CLIENT_ID)
+                .secret(passwordEncoder.encode(CLIENT_SECRET))
+                .redirectUris(loadProps.getRedirectUrls())
                 .authorizedGrantTypes(GRANT_TYPE_AUTHORIZATION_CODE, REFRESH_TOKEN)
                 .scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
                 .autoApprove(true)
