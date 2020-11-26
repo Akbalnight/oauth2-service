@@ -73,6 +73,11 @@ public class AuthService
         log.info("Tokens For Update size [{}]", tokensForUpdate.size());
         for(String value : tokensForUpdate) {
             OAuth2AccessToken OAuth2Token = tokenServices.readAccessToken(value);
+            if (OAuth2Token == null) {
+                log.info("Remove token from tokensForUpdate");
+                tokensForUpdate.remove(value);
+                continue;
+            }
             OAuth2Authentication authentication = tokenServices.loadAuthentication(OAuth2Token.getValue());
 
             DefaultOAuth2AccessToken token = (DefaultOAuth2AccessToken) OAuth2Token;
