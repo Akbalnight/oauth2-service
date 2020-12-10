@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * UserResponseObject.java
@@ -19,14 +20,16 @@ import java.util.List;
 public class UserResponseObject
 {
     /**
-     * Логин пользователя
-     */
-    private String username;
-    /**
      * Id пользователя
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Integer id;
+    private UUID id;
+
+    /**
+     * Логин пользователя
+     */
+    private String username;
+
     /**
      * Список ролей пользователя
      */

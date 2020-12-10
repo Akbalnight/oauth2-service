@@ -40,8 +40,13 @@ public class SecurityConfig
     @Value("${spring.ldap.domain}")
     private String ldapDomain;
 
-    private static final String SQL_GET_USERS_BY_NAME = "select username,password, enabled from users where username=LOWER(?)";
-    private static final String SQL_AUTORITIES_BY_NAME = "select username, role from user_roles where username=LOWER(?)";
+    private static final String SQL_GET_USERS_BY_NAME = "select username, password, enabled from users where username=LOWER(?)";
+    private static final String SQL_AUTORITIES_BY_NAME = "" +
+            "select user_id, c.name " +
+            "   from users a \n" +
+            "   join user_roles b on b.user_id = a.id \n" +
+            "   join roles c on c.id = b.role_id \n" +
+            "where a.username = LOWER(?)";
 
     @Autowired
     private DataSource dataSource;

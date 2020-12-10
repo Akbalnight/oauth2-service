@@ -20,6 +20,11 @@ public class Logger
     /**
      * @param msg логгируемая строка
      */
+    public void info (String msg) {slf4logger.info(msg);}
+
+    /**
+     * @param msg логгируемая строка
+     */
     public void debug(String msg)
     {
         slf4logger.info(msg);

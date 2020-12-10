@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -18,12 +19,12 @@ public class AssdUser
         extends User
         implements AssdUserDetails
 {
-    private Integer userId;
+    private UUID userId;
     private List<Permission> permissions;
 
     public AssdUser(String username, String password, boolean enabled, boolean accountNonExpired,
                     boolean credentialsNonExpired, boolean accountNonLocked,
-                    Collection<? extends GrantedAuthority> authorities, Integer userId, List<Permission> permissions)
+                    Collection<? extends GrantedAuthority> authorities, UUID userId, List<Permission> permissions)
     {
         super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
         this.permissions = permissions;
@@ -31,12 +32,12 @@ public class AssdUser
     }
 
     @Override
-    public Integer getUserId()
+    public UUID getUserId()
     {
         return userId;
     }
 
-    public void setUserId(Integer userId)
+    public void setUserId(UUID userId)
     {
         this.userId = userId;
     }

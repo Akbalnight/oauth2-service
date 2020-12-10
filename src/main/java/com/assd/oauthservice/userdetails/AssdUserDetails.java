@@ -3,6 +3,7 @@ package com.assd.oauthservice.userdetails;
 import com.assd.oauthservice.storage.Permission;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Description: Интерфейс для получения данных аутентификации пользователей
@@ -15,7 +16,7 @@ public interface AssdUserDetails
      * Для LDAP пользоватлей null
      * @return Возвращает id пользователя
      */
-    Integer getUserId();
+    UUID getUserId();
 
     /**
      * @return Возвращает логин пользователя

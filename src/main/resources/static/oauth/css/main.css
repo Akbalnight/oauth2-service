@@ -5,9 +5,50 @@ body {
     height: 100vh;
 }
 .page-block{
+    width: 330px;
     border-radius: 4px;
     box-shadow: 0 1px 0 0 #d7d8db,0 0 0 1px #e3e4e8;
 }
 .card{
+    border: none;
+}
+
+.list-group-header{
+    text-align: center;
+}
+
+.content-separator{
+    /* margin: 4px 16px; */
+    /* border-top: 1px solid #dae2ea; */
+    display: flex;
+    margin: 4px 0;
+
+    white-space: nowrap;
+    text-align: center;
+    border-top: 0;
+    border-top-color: currentcolor;
+    border-top-color: #dae2ea; /*rgba(0,0,0,.06);*/
+    width: 100%;
+    min-width: 100%;
+}
+.content-separator::before,
+.content-separator::after {
+    position: relative;
+    top: 50%;
+    width: 50%;
+    border-top: 1px solid transparent;
+        border-top-color: transparent;
+    border-top-color: inherit;
+    border-bottom: 0;
+    -webkit-transform: translateY(50%);
+    transform: translateY(50%);
+    content: "";
+}
+
+.content-separator-text {
+    padding: 0 1em;
+}
+
+.list-group-item {
     border: none;
 }

@@ -50,7 +50,7 @@ public class AssdLdapUserDetailsContextMapper
         final Map<String, String> userInfo = getUserInfo(ctx);
         details.setUserInfo(userInfo);
 
-        Integer userId = findUserId(username);
+        UUID userId = findUserId(username);
         if (userId == null)
         {
             // После аутентификации через LDAP добавим пользователя в БД
@@ -74,7 +74,7 @@ public class AssdLdapUserDetailsContextMapper
      * @param username Логин пользователя
      * @return Возвращает id пользователя
      */
-    private Integer findUserId(String username)
+    private UUID findUserId(String username)
     {
         try
         {

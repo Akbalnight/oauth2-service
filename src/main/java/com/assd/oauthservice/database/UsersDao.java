@@ -5,6 +5,7 @@ import com.assd.oauthservice.storage.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author amatveev
@@ -27,7 +28,7 @@ public interface UsersDao
      * Возвращает id пользователя
      * @param login Логин пользователя
      */
-    Integer getUserId(String login);
+    UUID getUserId(String login);
 
     /**
      * Возвращает роли пользователя
@@ -47,7 +48,7 @@ public interface UsersDao
      * @param userInfo Данные пользователя из LDAP
      * @return Возвращает id добавленного пользователя
      */
-    Integer addUserFromLdap(String username, Map<String, String> userInfo);
+    UUID addUserFromLdap(String username, Map<String, String> userInfo);
 
     /**
      * Обновляет роли пользователя в БД

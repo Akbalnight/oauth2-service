@@ -9,6 +9,7 @@ import org.springframework.security.ldap.userdetails.LdapUserDetails;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -20,7 +21,7 @@ public class AssdLdapUserDetails
 {
     private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
     private LdapUserDetails details;
-    private Integer userId;
+    private UUID userId;
     /**
      * Данные пользователя из LDAP. Формируются с помощью {@code LdapAttributesConst}
      */
@@ -58,12 +59,12 @@ public class AssdLdapUserDetails
     }
 
     @Override
-    public Integer getUserId()
+    public UUID getUserId()
     {
         return userId;
     }
 
-    public void setUserId(Integer userId)
+    public void setUserId(UUID userId)
     {
         this.userId = userId;
     }
