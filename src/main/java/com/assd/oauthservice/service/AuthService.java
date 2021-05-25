@@ -118,10 +118,10 @@ public class AuthService
     private void checkToken(OAuth2AccessToken OAuth2Token, String code_challenge)
     {
         if (OAuth2Token == null) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "invalid_token", "Token was not recognised");
+            throw new ServiceException(HttpStatus.UNAUTHORIZED, "invalid_token", "Token was not recognised");
         }
         if (OAuth2Token.isExpired()) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST, "invalid_token", "Token has expired");
+            throw new ServiceException(HttpStatus.UNAUTHORIZED, "invalid_token", "Token has expired");
         }
 
         checkCodeChallenge(OAuth2Token, code_challenge);
