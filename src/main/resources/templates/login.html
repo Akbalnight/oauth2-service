@@ -1,57 +1,53 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
->
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Вход в систему МИ</title>
+    <meta charset="utf-8">
+    <link rel="icon" href="/oauth/img/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="/oauth/bootstrap-4.3.1/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="/oauth/css/main.css" />
 </head>
 <body>
+    <div class="container">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-10 col-sm-8 col-md-5 col-lg-4 col-xl-4 bg-white" role="main" style="height: auto !important;">
+                <!-- <div class="col-sm "> -->
+                    <form th:action="@{/oauth/login}" method="post">
 
-<div class="container">
-    <div class="row root-row align-items-center justify-content-center">
-        <div class="col-xs-12 col-sm-10 col-md-4 p-5 bg-white page-block">
-            <form th:action="@{/oauth/login}" method="post">
-                <fieldset>
-                    <h4>Вход в систему МИ</h4>
-
-                    <div th:if="${param.error}">
-                        <div class="alert alert-danger">
-                            Не верный логин и пароль
+                        <div class="logo my-3">
+                            <img src="/oauth/img/logo.svg"/>
                         </div>
-                    </div>
-                    <div th:if="${param.logout}">
-                        <div class="alert alert-info">
-                            Вы вышли из системы
-                        </div>
-                    </div>
 
-                    <div class="form-group">
-                        <input type="text" name="username" id="username" class="form-control form-control-sm"
-                               placeholder="Имя пользователя" required="true" autofocus="true"/>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="password" id="password" class="form-control form-control-sm"
-                               placeholder="Пароль" required="true"/>
-                    </div>
 
-<!--                    <input type="hidden" th:name="${_csrf.parameterName}"-->
-<!--                           th:value="${_csrf.token}" />-->
+                        <div id="logout-block" class="d-none">
+                            <div class="alert alert-info">
+                                Вы вышли из системы
+                            </div>
+                        </div>
 
-                    <div class="row align-items-center justify-content-center">
-                        <div class="col-xs-6 col-sm-6 col-md-6">
-                            <span>© ГПН 2020</span>
+                        <input type="text" name="username" id="username" class="form-control mb-3"
+                                placeholder="Имя пользователя" required="true" autofocus="true"/>
+                        <input type="password" name="password" id="password" class="form-control mb-3"
+                                placeholder="Пароль" required="true"/>
+
+                        <div id="error-block" class="d-none">
+                            <div class="alert alert-danger">
+                                Не верный логин и пароль
+                            </div>
                         </div>
-                        <div class="col-xs-6 col-sm-6 col-md-6">
-                            <button type="submit" class="btn btn-primary btn-block">Вход</button>
+
+                        <div class="justify-content-center mb-3">
+                            <div class="offset-3 col-6">
+                                <button type="submit" class="btn btn-primary btn-block">Вход</button>
+                            </div>
                         </div>
-                    </div>
-                </fieldset>
-            </form>
+                    </form>
+                <!-- </div> -->
+            </div>
         </div>
     </div>
-
-</div>
-
 </body>
+<!-- <script src="/oauth/bootstrap-4.3.1/js/bootstrap.min.js"></script> -->
+<script src="/oauth/js/main.js"></script>
 </html>

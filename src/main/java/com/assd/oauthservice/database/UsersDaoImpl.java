@@ -29,7 +29,10 @@ import static com.assd.oauthservice.ldap.LdapAttributesConst.MAIL;
 @Component
 public class UsersDaoImpl implements UsersDao
 {
-    private static final String SQL_SELECT_ALL_LDAP_ROLES = "SELECT ldap_group, role_id FROM ldap_roles";
+    private static final String SQL_SELECT_ALL_LDAP_ROLES = "" +
+            "SELECT ldap_group, b.name as role_name \n" +
+            "FROM ldap_roles a \n" +
+            "    JOIN roles b ON b.id = a.role_id ";
 
     private static final String SQL_SELECT_PERMISSIONS_BY_USERNAME = "" +
             "SELECT DISTINCT a.method, a.path \n" +
@@ -59,10 +62,10 @@ public class UsersDaoImpl implements UsersDao
             "WHERE c.name IN (:roles)";
 
     private static final String SQL_SELECT_NOT_LDAP_USER_ROLES = "" +
-            "SELECT c.name \n" +
+            "SELECT c.name \n" + // as role_name, c.id as role_id
             "    from users a \n" +
-            "    LEFT JOIN user_roles b on b.user_id = a.id \n" +
-            "        LEFT JOIN roles c ON c.id = b.role_id \n" +
+            "    JOIN user_roles b on b.user_id = a.id \n" +
+            "        JOIN roles c ON c.id = b.role_id \n" +
             "WHERE a.username = :username";
 
     private static final String SQL_DELETE_USER_ROLES = "DELETE FROM user_roles WHERE user_id = :userId";
@@ -71,7 +74,7 @@ public class UsersDaoImpl implements UsersDao
 
     private static final String SQL_INSERT_LDAP_USER = "" +
             "INSERT INTO users (username, password, enabled, ldap, email, json_data) \n" +
-            "    VALUES ( :username, :password, :enabled, :ldap, :email, cast(:jsonData AS JSON))";
+            "    VALUES ( :username, :password, :enabled, :ldap, :email, cast(:jsonData AS JSON)) returning id;";
 
 
 
@@ -91,11 +94,12 @@ public class UsersDaoImpl implements UsersDao
     public HashMap<String, String> getLdapAuthoritiesMap()
     {
         return jdbcTemplate.query(SQL_SELECT_ALL_LDAP_ROLES, rs ->
+
         {
             HashMap<String, String> mapRet = new HashMap<>();
             while (rs.next())
             {
-                mapRet.put(rs.getString("ldap_group"), rs.getString("role_id"));
+                mapRet.put(rs.getString("ldap_group"), rs.getString("role_name"));
             }
             return mapRet;
         });
@@ -204,6 +208,17 @@ public class UsersDaoImpl implements UsersDao
     {
         return jdbcTemplate.queryForList(SQL_SELECT_NOT_LDAP_USER_ROLES, new MapSqlParameterSource("username", username),
                 String.class);
+
+//        return jdbcTemplate.query(SQL_SELECT_NOT_LDAP_USER_ROLES, rs ->
+//
+//        {
+//            HashMap<String, UUID> mapRet = new HashMap<>();
+//            while (rs.next())
+//            {
+//                mapRet.put(rs.getString("role_name"), UUID.fromString(rs.getString("role_id")));
+//            }
+//            return mapRet;
+//        });
     }
 
     /**
@@ -242,7 +257,6 @@ public class UsersDaoImpl implements UsersDao
         }
 
         String json = null;
-
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("username", username);
         params.addValue("password", new BCryptPasswordEncoder().encode(""));
@@ -250,9 +264,8 @@ public class UsersDaoImpl implements UsersDao
         params.addValue("ldap", true);
         params.addValue("email", email);
         params.addValue("jsonData", json);
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(SQL_INSERT_LDAP_USER, params, keyHolder, new String[]{"id"});
-        logger.info(String.format("----->>>>> addUserFromLdap [%s]: [%s]", username, keyHolder.getKeyList().get(0).toString()));
-        return UUID.fromString(keyHolder.getKeyList().get(0).toString());
+        UUID id = jdbcTemplate.queryForObject(SQL_INSERT_LDAP_USER, params, UUID.class);
+        logger.info(String.format("----->>>>> addUserFromLdap [%s]: [%s]", username, id));
+        return id;
     }
 }

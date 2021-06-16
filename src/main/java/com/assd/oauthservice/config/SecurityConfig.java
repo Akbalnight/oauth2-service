@@ -87,10 +87,10 @@ public class SecurityConfig
                 .logout()
                 .logoutUrl("/oauth/logout")
                 .deleteCookies("JSESSIONID")
-                .permitAll()
-            .and()
-                .exceptionHandling()
-                .accessDeniedHandler(new OAuth2AccessDeniedHandler());
+                .permitAll();
+//            .and()
+//                .exceptionHandling()
+//                .accessDeniedHandler(new OAuth2AccessDeniedHandler());
 
         // Необходимо для получения списка активных сессий
 //        http.sessionManagement().sess

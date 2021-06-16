@@ -149,6 +149,9 @@ public class AssdLdapUserDetailsContextMapper
         List<String> roles = usersDao.getNotLdapUserRoles(username);
         roles.forEach(role -> mappedAuthorities.add(new SimpleGrantedAuthority(role)));
 
+//        for(Map.Entry<String, DatabaseSettings> database : readDataBases.entrySet()){
+
+        logger.debug("LDAP пользователь " + username + ". Группы: " + userGroups);
         // Добавление ролей соответствующих LDAP группам пользователя
         Map<String, String> rolesMap = usersDao.getLdapAuthoritiesMap();
         userGroups.forEach(authority -> rolesMap.keySet().forEach(ldapGroup ->
@@ -160,10 +163,9 @@ public class AssdLdapUserDetailsContextMapper
                         {
                             mappedAuthorities.add(new SimpleGrantedAuthority(rolesMap.get(ldapGroup)));
                         }
-                        return;
                     }
                 }));
-        logger.debug("LDAP пользователь " + username + ". Роли: " + mappedAuthorities + ". Группы: " + userGroups);
+        logger.debug("LDAP пользователь " + username + ". Роли: " + mappedAuthorities);
         return mappedAuthorities;
     }
 }

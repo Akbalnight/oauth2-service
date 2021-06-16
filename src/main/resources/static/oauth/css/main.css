@@ -1,14 +1,36 @@
 body {
     background: #edeef0;
 }
-.root-row{
+
+.container, .row {
     height: 100vh;
 }
-.page-block{
+
+/* .bg-white {
+    background: white;
+}
+
+.page-block {
     width: 330px;
     border-radius: 4px;
     box-shadow: 0 1px 0 0 #d7d8db,0 0 0 1px #e3e4e8;
+} */
+
+.logo {
+    display: flex;
+    margin-bottom: 1rem;
 }
+
+.logo img {
+    width: 45%;
+    margin: auto;
+}
+
+.alert {
+    padding: .25rem .5rem;
+    font-size: .75rem;
+}
+
 .card{
     border: none;
 }
@@ -51,4 +73,20 @@ body {
 
 .list-group-item {
     border: none;
+}
+
+/* Экстрамалые девайсы («телефоны», < 576px) */
+@media (max-width: 575.98px) { 
+}
+
+/* Малые девайсы («ландшафтные», < 768px) */
+@media (max-width: 767.98px) {
+}
+
+/* Средние девайсы («таблетки», < 992px) */
+@media (max-width: 991.98px) {
+}
+
+/* Большие девайсы (большие десктопы, < 1200px) */
+@media (max-width: 1199.98px) {
 }
